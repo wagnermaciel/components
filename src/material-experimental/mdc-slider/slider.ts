@@ -215,8 +215,8 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   getRootEl() {
     return this._elementRef.nativeElement;
   }
-  getValue(thumb: Thumb): number {
-    return this.getInput(thumb).value;
+  getValue(thumb: Thumb = Thumb.END): number {
+    return coerceNumberProperty(this.getInput(thumb).value);
   }
   setValue(value: number, thumb: Thumb) {
     if (thumb === Thumb.START) {
@@ -271,18 +271,17 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   private _createEvent(value: number, thumb: Thumb): MatSliderEvent {
     return new MatSliderEvent(this, this.getInput(thumb), value);
   }
-  private _initInputs() {
-    // Indicate to each of the inputs what thumb they correspond to.
-    if (this.isRange) {
-      this.inputs[0].thumb = Thumb.START;
-      this.inputs[1].thumb = Thumb.END;
-    } else {
-      this.inputs[0].thumb = Thumb.END;
-    }
-    // Disable the slider inputs if this slider is disabled.
-    if (this.isDisabled) {
-      this.inputs.forEach(input => input.getRootEl().disabled = true);
-    }
+
+  private _initInputs(): Promise<void> {
+    // TODO(wagnermaciel): Ask mmalerba how this resolves that change detection issue.
+    return Promise.resolve().then(() => {
+      this.inputs[0].init({
+        thumb: this.isRange ? Thumb.START : Thumb.END,
+      });
+      this.inputs[1]?.init({
+        thumb: Thumb.END,
+      });
+    });
   }
 
   constructor(
@@ -295,12 +294,13 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   }
 
   ngAfterViewInit() {
-    this.initialized = true;
-    this._initInputs();
-    this._foundation.init();
-    if (this._platform.isBrowser) {
-      this._foundation.layout();
-    }
+    this._initInputs().then(() => {
+      this.initialized = true;
+      this._foundation.init();
+      if (this._platform.isBrowser) {
+        this._foundation.layout();
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -362,7 +362,7 @@ class SliderAdapter implements MDCSliderAdapter {
     return this._delegate.getInputEl(thumb).value;
   }
   setInputValue = (value: string, thumb: Thumb): void => {
-    this._delegate.getInput(thumb).value = coerceNumberProperty(value);
+    this._delegate.getInput(thumb).value = value;
   }
   getInputAttribute = (attribute: string, thumb: Thumb): string | null => {
     return this._delegate.getInputEl(thumb).getAttribute(attribute);
