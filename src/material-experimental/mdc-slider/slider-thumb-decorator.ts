@@ -130,7 +130,7 @@ export class ThumbKnob implements AfterViewInit {
       this._isActive = false;
       this._activeRippleRef?.fadeOut();
       // Happens when the user starts dragging a thumb, tabs away, and then stops dragging.
-      if (!this._sliderInput.isFocused) {
+      if (!this._sliderInput.isFocused()) {
         this._focusRippleRef?.fadeOut();
       }
     }

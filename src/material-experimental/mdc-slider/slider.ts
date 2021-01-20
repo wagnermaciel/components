@@ -377,7 +377,7 @@ class SliderAdapter implements MDCSliderAdapter {
     this._delegate.getInputEl(thumb).focus();
   }
   isInputFocused = (thumb: Thumb): boolean => {
-    return this._delegate.getInput(thumb).isFocused;
+    return this._delegate.getInput(thumb).isFocused();
   }
   getThumbKnobWidth = (thumb: Thumb): number => {
     return this._delegate.getThumb(thumb).getKnobWidth();

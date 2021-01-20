@@ -7,7 +7,8 @@
  */
 
 import {coerceNumberProperty, NumberInput} from '@angular/cdk/coercion';
-import {Directive, ElementRef, EventEmitter, HostListener, Input, Output} from '@angular/core';
+import {DOCUMENT} from '@angular/common';
+import {Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Output} from '@angular/core';
 import {Thumb} from '@material/slider';
 import {MatSlider} from './slider';
 
@@ -84,6 +85,7 @@ import {MatSlider} from './slider';
   initialized: boolean;
 
   constructor(
+    @Inject(DOCUMENT) private readonly _document: any,
     private _el: ElementRef,
     private _slider: MatSlider) {}
 
@@ -105,16 +107,13 @@ import {MatSlider} from './slider';
   }
 
   getRootEl(): HTMLInputElement { return this._el.nativeElement; };
-
-  isFocused: boolean = false;
+  isFocused(): boolean { return this.getRootEl() === this._document.activeElement; }
 
   @HostListener('focus') onFocus(): void {
-    this.isFocused = true;
     this._focus.emit();
   }
 
   @HostListener('blur') onBlur(): void {
-    this.isFocused = false;
     this._blur.emit();
   }
 
