@@ -58,7 +58,7 @@ export class SliderAdapter implements MDCSliderAdapter {
     return this._delegate.getInput(thumb).isFocused();
   }
   getThumbKnobWidth = (thumb: Thumb): number => {
-    return this._delegate.getThumbEl(thumb).getBoundingClientRect().width;
+    return this._delegate.getThumb(thumb)._knob.getRootEl().getBoundingClientRect().width;
   }
   getThumbBoundingClientRect = (thumb: Thumb): ClientRect => {
     return this._delegate.getThumbEl(thumb).getBoundingClientRect();
