@@ -32,8 +32,8 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import {CanColorCtor, mixinColor} from '@angular/material/core';
-import {SpecificEventListener, EventType} from '@material/base';
-import {MDCSliderAdapter, MDCSliderFoundation, Thumb, TickMark} from '@material/slider';
+import {MDCSliderFoundation, Thumb, TickMark} from '@material/slider';
+import {SliderAdapter} from './slider-adapter';
 import {MatSliderThumb} from './slider-thumb';
 import {MatSliderThumbDecorator} from './slider-thumb-decorator';
 
@@ -174,7 +174,6 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   /** Event emitted when the slider thumb stops being dragged. */
   @Output() readonly dragEnd: EventEmitter<MatSliderEvent> = new EventEmitter<MatSliderEvent>();
 
-
   // *************** //
   // Class variables //
   // *************** //
@@ -208,45 +207,31 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
     return this._getValueIndicatorText(value);
   }
 
+  /** Returns the display text for the given value. */
+  private _getValueIndicatorText(value: number) {
+    return this.displayWith ? this.displayWith(value) : value.toString();
+  }
+
   // ************** //
   // Public methods //
   // ************** //
 
-  getRootEl() {
-    return this._elementRef.nativeElement;
-  }
-  getValue(thumb: Thumb = Thumb.END): number {
-    return coerceNumberProperty(this.getInput(thumb).value);
-  }
-  setValue(value: number, thumb: Thumb) {
-    if (thumb === Thumb.START) {
-      this._foundation.setValueStart(value);
-    } else {
-      this._foundation.setValue(value);
-    }
-  }
   getTickMarkClass(tickMark: TickMark) {
     return tickMark === TickMark.ACTIVE
       ? 'mdc-slider__tick-mark--active'
       : 'mdc-slider__tick-mark--inactive';
   }
-  emitChangeEvent(value: number, thumb: Thumb) {
-    this.change.emit(this._createEvent(value, thumb));
-  }
-  emitInputEvent(value: number, thumb: Thumb) {
-    this.input.emit(this._createEvent(value, thumb));
-  }
-  emitDragStartEvent(value: number, thumb: Thumb) {
-    this.dragStart.emit(this._createEvent(value, thumb));
-  }
-  emitDragEndEvent(value: number, thumb: Thumb) {
-    this.dragEnd.emit(this._createEvent(value, thumb));
+  createEvent(value: number, thumb: Thumb): MatSliderEvent {
+    return new MatSliderEvent(this, this.getInput(thumb), value);
   }
   getDocument() {
     return this._document;
   }
   getWindow() {
     return this._document.defaultView || window;
+  }
+  getRootEl() {
+    return this._elementRef.nativeElement;
   }
   getThumb(thumb: Thumb = Thumb.END): MatSliderThumbDecorator {
     return thumb === Thumb.END ? this.thumbs[this.thumbs.length - 1] : this.thumbs[0];
@@ -260,16 +245,13 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   getInputEl(thumb: Thumb = Thumb.END): HTMLInputElement {
     return this.getInput(thumb).getRootEl();
   }
-
-  // *************** //
-  // Private Methods //
-  // *************** //
-
-  private _getValueIndicatorText(value: number) {
-    return this.displayWith ? this.displayWith(value) : value.toString();
+  getValue(thumb: Thumb = Thumb.END): number {
+    return coerceNumberProperty(this.getInput(thumb).value);
   }
-  private _createEvent(value: number, thumb: Thumb): MatSliderEvent {
-    return new MatSliderEvent(this, this.getInput(thumb), value);
+  setValue(value: number, thumb: Thumb) {
+    thumb === Thumb.START
+      ? this._foundation.setValueStart(value)
+      : this._foundation.setValue(value);
   }
 
   private _initInputs(): Promise<void> {
@@ -330,137 +312,4 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   static ngAcceptInputType_min: NumberInput;
   static ngAcceptInputType_max: NumberInput;
   static ngAcceptInputType_step: NumberInput;
-}
-
-// TODO(wagnermaciel): Figure out why I need to declare the methods on SliderAdapter this way.
-// * Object.assign(defaultAdapter, adapter) should return just adapter since it implements
-// the same base class and therefore should have the same properties.
-// * Object.keys(adapter) shows only `_delegate`. None of the classes show up.
-// * Defining the methods like this makes them show up and makes Object.assign work as expected.
-
-class SliderAdapter implements MDCSliderAdapter {
-  constructor(private readonly _delegate: MatSlider) {}
-  hasClass = (className: string): boolean => {
-    return this._delegate.getRootEl().classList.contains(className);
-  }
-  addClass = (className: string): void => {
-    this._delegate.getRootEl().classList.add(className);
-  }
-  removeClass = (className: string): void => {
-    this._delegate.getRootEl().classList.remove(className);
-  }
-  getAttribute = (attribute: string): string | null => {
-    return this._delegate.getRootEl().getAttribute(attribute);
-  }
-  addThumbClass = (className: string, thumb: Thumb): void => {
-    this._delegate.getThumbEl(thumb).classList.add(className);
-  }
-  removeThumbClass = (className: string, thumb: Thumb): void => {
-    this._delegate.getThumbEl(thumb).classList.remove(className);
-  }
-  getInputValue = (thumb: Thumb): string => {
-    return this._delegate.getInputEl(thumb).value;
-  }
-  setInputValue = (value: string, thumb: Thumb): void => {
-    this._delegate.getInput(thumb).value = value;
-  }
-  getInputAttribute = (attribute: string, thumb: Thumb): string | null => {
-    return this._delegate.getInputEl(thumb).getAttribute(attribute);
-  }
-  setInputAttribute = (attribute: string, value: string, thumb: Thumb): void => {
-    this._delegate.getInputEl(thumb).setAttribute(attribute, value);
-  }
-  removeInputAttribute = (attribute: string, thumb: Thumb): void => {
-    this._delegate.getInputEl(thumb).removeAttribute(attribute);
-  }
-  focusInput = (thumb: Thumb): void => {
-    this._delegate.getInputEl(thumb).focus();
-  }
-  isInputFocused = (thumb: Thumb): boolean => {
-    return this._delegate.getInput(thumb).isFocused();
-  }
-  getThumbKnobWidth = (thumb: Thumb): number => {
-    return this._delegate.getThumb(thumb).getKnobWidth();
-  }
-  getThumbBoundingClientRect = (thumb: Thumb): ClientRect => {
-    return this._delegate.getThumbEl(thumb).getBoundingClientRect();
-  }
-  getBoundingClientRect = (): ClientRect => {
-    return this._delegate.getRootEl().getBoundingClientRect();
-  }
-  isRTL = (): boolean => {
-    return false;
-    // TODO(wagnermaciel): DO NOT FORGET TO IMPLEMENT THIS.
-    // throw new Error('Method not implemented.');
-  }
-  setThumbStyleProperty = (propertyName: string, value: string, thumb: Thumb): void => {
-    this._delegate.getThumbEl(thumb).style.setProperty(propertyName, value);
-  }
-  removeThumbStyleProperty = (propertyName: string, thumb: Thumb): void => {
-    this._delegate.getThumbEl(thumb).style.removeProperty(propertyName);
-  }
-  setTrackActiveStyleProperty = (propertyName: string, value: string): void => {
-    this._delegate.trackActive.style.setProperty(propertyName, value);
-  }
-  removeTrackActiveStyleProperty = (propertyName: string): void => {
-    this._delegate.trackActive.style.removeProperty(propertyName);
-  }
-  setValueIndicatorText = (value: number, thumb: Thumb): void => {
-    this._delegate.getThumb(thumb).valueIndicatorText = value.toString();
-  }
-  getValueToAriaValueTextFn = (): ((value: number) => string) | null => {
-    return this._delegate.displayWith;
-  }
-  updateTickMarks = (tickMarks: TickMark[]): void => {
-    this._delegate.tickMarks = tickMarks;
-  }
-  setPointerCapture = (pointerId: number): void => {
-    try {
-      this._delegate.getRootEl().setPointerCapture(pointerId);
-    } catch (error) {
-      console.warn(error);
-    }
-  }
-  emitChangeEvent = (value: number, thumb: Thumb): void => {
-    this._delegate.emitChangeEvent(value, thumb);
-  }
-  emitInputEvent = (value: number, thumb: Thumb): void => {
-    this._delegate.emitInputEvent(value, thumb);
-  }
-  emitDragStartEvent = (value: number, thumb: Thumb): void => {
-    this._delegate.emitDragStartEvent(value, thumb);
-  }
-  emitDragEndEvent = (value: number, thumb: Thumb): void => {
-    this._delegate.emitDragEndEvent(value, thumb);
-  }
-  registerEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getRootEl().addEventListener(evtType, handler);
-  }
-  deregisterEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getRootEl().removeEventListener(evtType, handler);
-  }
-  registerThumbEventHandler = <K extends EventType>(thumb: Thumb, evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getThumbEl(thumb).addEventListener(evtType, handler);
-  }
-  deregisterThumbEventHandler = <K extends EventType>(thumb: Thumb, evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getThumbEl(thumb).removeEventListener(evtType, handler);
-  }
-  registerInputEventHandler = <K extends EventType>(thumb: Thumb, evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getInputEl(thumb).addEventListener(evtType, handler);
-  }
-  deregisterInputEventHandler = <K extends EventType>(thumb: Thumb, evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getInputEl(thumb).removeEventListener(evtType, handler);
-  }
-  registerBodyEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getDocument().body.addEventListener(evtType, handler);
-  }
-  deregisterBodyEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getDocument().body.removeEventListener(evtType, handler);
-  }
-  registerWindowEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getWindow().addEventListener(evtType, handler);
-  }
-  deregisterWindowEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getWindow().removeEventListener(evtType, handler);
-  }
 }

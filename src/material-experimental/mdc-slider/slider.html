@@ -8,5 +8,12 @@
     <div *ngFor="let tickMark of tickMarks" class="{{getTickMarkClass(tickMark)}}"></div>
   </div>
 </div>
-<mat-slider-thumb [thumb]="isRange ? 1 : 2" [isDiscrete]="isDiscrete" [valueIndicatorText]="startValueIndicatorText" #startThumb></mat-slider-thumb>
-<mat-slider-thumb *ngIf="isRange" [thumb]="2" [isDiscrete]="isDiscrete" [valueIndicatorText]="endValueIndicatorText" #endThumb></mat-slider-thumb>
+
+<mat-slider-start-thumb-decorator
+  *ngIf="isRange"
+  [valueIndicatorText]="startValueIndicatorText">
+</mat-slider-start-thumb-decorator>
+
+<mat-slider-end-thumb-decorator
+  [valueIndicatorText]="endValueIndicatorText">
+</mat-slider-end-thumb-decorator>

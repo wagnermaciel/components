@@ -8,7 +8,7 @@
 
 import {coerceNumberProperty, NumberInput} from '@angular/cdk/coercion';
 import {DOCUMENT} from '@angular/common';
-import {Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Output} from '@angular/core';
+import {Directive, ElementRef, EventEmitter, Inject, Input, Output} from '@angular/core';
 import {Thumb} from '@material/slider';
 import {MatSlider} from './slider';
 
@@ -38,13 +38,13 @@ import {MatSlider} from './slider';
       : this._value;
   };
   set value(v: string|null) {
-    this._value = v;
     this.initialized = true;
+    this._value = v;
+    this.getRootEl().value = v!;
+    this.getRootEl().setAttribute('value', v!);
     if (this._slider.initialized) {
       this._slider.setValue(coerceNumberProperty(v), this.thumb);
     }
-    this.getRootEl().setAttribute('value', v!);
-    this.getRootEl().value = v!;
   };
   private _value: string|null;
 
@@ -77,8 +77,8 @@ import {MatSlider} from './slider';
   @Input()
   set disabled(v: boolean) { throw Error('Invalid attribute "disabled" on MatSliderThumb.'); }
 
-  @Output() readonly _focus: EventEmitter<void> = new EventEmitter<void>();
   @Output() readonly _blur: EventEmitter<void> = new EventEmitter<void>();
+  @Output() readonly _focus: EventEmitter<void> = new EventEmitter<void>();
 
   /** Indicates which slider thumb this input corresponds to. */
   thumb: Thumb;
