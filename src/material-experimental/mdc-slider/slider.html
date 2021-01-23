@@ -11,9 +11,11 @@
 
 <mat-slider-start-thumb-decorator
   *ngIf="isRange"
+  [isDiscrete]="isDiscrete"
   [valueIndicatorText]="startValueIndicatorText">
 </mat-slider-start-thumb-decorator>
 
 <mat-slider-end-thumb-decorator
+  [isDiscrete]="isDiscrete"
   [valueIndicatorText]="endValueIndicatorText">
 </mat-slider-end-thumb-decorator>

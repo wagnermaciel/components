@@ -59,24 +59,18 @@ export class MatSliderThumbDecorator {
   /** The visible circle for the slider thumb. */
   @ViewChild(MatSliderThumbKnob) _knob: MatSliderThumbKnob;
 
-  /** Which thumb this decorator corresponds to. */
-  get thumb(): Thumb {
-    if (!this._thumb) {
-      this.thumb = this._elementRef.nativeElement.tagName === 'MAT-SLIDER-END-THUMB-DECORATOR'
-        ? Thumb.END
-        : Thumb.START;
-    }
-    return this._thumb;
-  }
-  set thumb(v: Thumb) { this._thumb = v; }
-  private _thumb: Thumb;
-
   constructor(
     private _cdr: ChangeDetectorRef,
     private _elementRef: ElementRef<HTMLElement>,
     ) {}
 
-  getRootEl() {
+  _getThumb(): Thumb {
+    return this._elementRef.nativeElement.tagName === 'MAT-SLIDER-END-THUMB-DECORATOR'
+    ? Thumb.END
+    : Thumb.START;
+  }
+
+  getRootEl(): HTMLElement {
     return this._elementRef.nativeElement;
   }
 }

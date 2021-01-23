@@ -59,7 +59,7 @@ export class MatSliderThumbKnob implements AfterViewInit {
     }
 
   ngAfterViewInit() {
-    this._thumb = this._sliderThumb.thumb;
+    this._thumb = this._sliderThumb._getThumb();
     this._sliderInput = this._slider.getInput(this._thumb);
 
     this._slider.dragEnd.subscribe((event: MatSliderEvent) => this._onDragEnd(event));
