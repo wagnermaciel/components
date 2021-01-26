@@ -31,11 +31,11 @@ import {
   ViewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import {CanColorCtor, mixinColor} from '@angular/material/core';
+import {CanColorCtor, MatRipple, mixinColor} from '@angular/material/core';
 import {MDCSliderFoundation, Thumb, TickMark} from '@material/slider';
 import {SliderAdapter} from './slider-adapter';
 import {MatSliderThumb} from './slider-thumb';
-import {MatSliderThumbDecorator} from './slider-thumb-decorator';
+import {MatSliderThumbKnob} from './slider-thumb-knob';
 
 // Boilerplate for applying mixins to MatSlider.
 /** @docs-private */
@@ -65,6 +65,15 @@ export class MatSliderEvent {
   }
 }
 
+export class MatSliderInteractionEvent {
+  thumb: Thumb;
+  source: MatSlider;
+  constructor(source: MatSlider, thumb: Thumb) {
+    this.source = source;
+    this.thumb = thumb;
+  }
+}
+
 // TODO(wagnermaciel): Figure out what the MAT_SLIDER_VALUE_ACCESSOR did and add it back.
 
 /**
@@ -85,7 +94,7 @@ export class MatSliderEvent {
   exportAs: 'matSlider',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [],
+  providers: [MatRipple],
   inputs: ['color'],
 })
 export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnDestroy {
@@ -95,8 +104,8 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   // ************************* //
 
   /** The visual slider thumb(s). */
-  @ViewChildren(MatSliderThumbDecorator) _thumbs: QueryList<MatSliderThumbDecorator>;
-  private get thumbs(): MatSliderThumbDecorator[] { return this._thumbs?.toArray(); }
+  @ViewChildren('thumb') _thumbs: QueryList<ElementRef<HTMLElement>>;
+  private get thumbs(): HTMLElement[] { return this._thumbs?.toArray().map(e => e.nativeElement); }
 
   /** The active section of the slider track. */
   @ViewChild('trackActive') _trackActive: ElementRef<HTMLElement>;
@@ -105,6 +114,10 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   /** The hidden range inputs. */
   @ContentChildren(MatSliderThumb) _inputs: QueryList<MatSliderThumb>;
   private get inputs(): MatSliderThumb[] { return this._inputs ? this._inputs.toArray() : []; }
+
+  /** The slider thumb knobs. */
+  @ViewChildren(MatSliderThumbKnob) _knobs: QueryList<MatSliderThumbKnob>;
+  private get knobs(): MatSliderThumbKnob[] { return this._knobs ? this._knobs.toArray() : []; }
 
   // ****** //
   // Inputs //
@@ -189,27 +202,33 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   }
   private _tickMarks: TickMark[];
 
+  /** Returns an array of the thumb types that exist on the current slider instance. */
+  _getThumbTypes(): Thumb[] {
+    return this.isRange ? [Thumb.START, Thumb.END] : [Thumb.END];
+  }
+
   /** Whether the foundation has been initialized. */
   initialized: boolean = false;
 
   /** Whether this is a ranged slider. */
   get isRange(): boolean { return this.inputs.length === 2; }
 
-  /** The text representation of the start inputs value. */
-  get startValueIndicatorText() {
-    const value = this.getValue(Thumb.START) ?? this.min;
-    return this._getValueIndicatorText(value);
-  }
+  _startValueIndicatorText: string;
+  _endValueIndicatorText: string;
 
-  /** The text representation of the end inputs value. */
-  get endValueIndicatorText() {
-    const value = this.getValue(Thumb.END) ?? this.max;
-    return this._getValueIndicatorText(value);
-  }
-
-  /** Returns the display text for the given value. */
-  private _getValueIndicatorText(value: number) {
+  getValueIndicatorText(value: number) {
     return this.displayWith ? this.displayWith(value) : value.toString();
+  }
+
+  getValueIndicatorTextByThumb(thumb: Thumb) {
+    return this.getValueIndicatorText(this.getValue(thumb));
+  }
+
+  setValueIndicatorText(value: number, thumb: Thumb) {
+    const valueText = this.getValueIndicatorText(value);
+    thumb === Thumb.START
+      ? this._startValueIndicatorText = valueText
+      : this._endValueIndicatorText = valueText;
   }
 
   // ************** //
@@ -233,11 +252,14 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   getRootEl() {
     return this._elementRef.nativeElement;
   }
-  getThumb(thumb: Thumb = Thumb.END): MatSliderThumbDecorator {
+  getThumbEl(thumb: Thumb = Thumb.END): HTMLElement {
     return thumb === Thumb.END ? this.thumbs[this.thumbs.length - 1] : this.thumbs[0];
   }
-  getThumbEl(thumb: Thumb = Thumb.END): HTMLElement {
-    return this.getThumb(thumb).getRootEl();
+  getKnob(thumb: Thumb) {
+    return thumb === Thumb.END ? this.knobs[this.knobs.length - 1] : this.knobs[0];
+  }
+  getKnobEl(thumb: Thumb) {
+    return this.getKnob(thumb).getRootEl();
   }
   getInput(thumb: Thumb = Thumb.END): MatSliderThumb {
     return thumb === Thumb.END ? this.inputs[this.inputs.length - 1] : this.inputs[0];
@@ -289,6 +311,12 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
     if (this._platform.isBrowser) {
       this._foundation.destroy();
     }
+  }
+
+  @Output() readonly _mouseenter: EventEmitter<MatSliderInteractionEvent> = new EventEmitter<MatSliderInteractionEvent>();
+  @Output() readonly _mouseleave: EventEmitter<MatSliderInteractionEvent> = new EventEmitter<MatSliderInteractionEvent>();
+  createInteractionEvent(thumb: Thumb) {
+    return new MatSliderInteractionEvent(this, thumb);
   }
 
   // The following lines of code enable us to provide a better developer experience by allowing a

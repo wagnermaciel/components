@@ -58,7 +58,7 @@ export class SliderAdapter implements MDCSliderAdapter {
     return this._delegate.getInput(thumb).isFocused();
   }
   getThumbKnobWidth = (thumb: Thumb): number => {
-    return this._delegate.getThumb(thumb)._knob.getRootEl().getBoundingClientRect().width;
+    return this._delegate.getKnobEl(thumb).getBoundingClientRect().width;
   }
   getThumbBoundingClientRect = (thumb: Thumb): ClientRect => {
     return this._delegate.getThumbEl(thumb).getBoundingClientRect();
@@ -84,7 +84,7 @@ export class SliderAdapter implements MDCSliderAdapter {
     this._delegate.trackActive.style.removeProperty(propertyName);
   }
   setValueIndicatorText = (value: number, thumb: Thumb): void => {
-    this._delegate.getThumb(thumb).valueIndicatorText = value.toString();
+    this._delegate.setValueIndicatorText(value, thumb);
   }
   getValueToAriaValueTextFn = (): ((value: number) => string) | null => {
     return this._delegate.displayWith;

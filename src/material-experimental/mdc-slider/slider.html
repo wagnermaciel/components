@@ -9,13 +9,21 @@
   </div>
 </div>
 
-<mat-slider-start-thumb-decorator
-  *ngIf="isRange"
-  [isDiscrete]="isDiscrete"
-  [valueIndicatorText]="startValueIndicatorText">
-</mat-slider-start-thumb-decorator>
-
-<mat-slider-end-thumb-decorator
-  [isDiscrete]="isDiscrete"
-  [valueIndicatorText]="endValueIndicatorText">
-</mat-slider-end-thumb-decorator>
+<div
+  class="mdc-slider__thumb"
+  *ngFor="let thumb of _getThumbTypes();"
+  (mouseenter)="_mouseenter.emit(createInteractionEvent(thumb))"
+  (mouseleave)="_mouseleave.emit(createInteractionEvent(thumb))"
+  matRipple
+  #thumb>
+  <ng-container *ngIf="isDiscrete">
+    <div class="mdc-slider__value-indicator-container">
+      <div class="mdc-slider__value-indicator">
+        <span class="mdc-slider__value-indicator-text">
+          {{ getValueIndicatorTextByThumb(thumb) }}
+        </span>
+      </div>
+    </div>
+  </ng-container>
+  <div class="mdc-slider__thumb-knob" [thumb]="thumb" mat-slider-thumb-knob></div>
+</div>

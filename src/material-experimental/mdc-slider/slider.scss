@@ -4,5 +4,8 @@
 @include without-ripple($query: $mat-base-styles-query);
 
 mat-slider {
-	display: block;
+  display: block;
+  .mat-ripple {
+    overflow: visible;
+  }
 }

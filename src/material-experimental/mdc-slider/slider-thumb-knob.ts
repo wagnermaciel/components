@@ -1,16 +1,13 @@
-import {AfterViewInit, Directive, ElementRef} from "@angular/core";
+import {AfterViewInit, Directive, ElementRef, Input} from "@angular/core";
 import {MatRipple, RippleAnimationConfig, RippleRef, RippleState} from "@angular/material/core";
 import {Thumb} from '@material/slider';
-import {MatSlider, MatSliderEvent} from "./slider";
-import {MatSliderThumb} from "./slider-thumb";
-import {MatSliderThumbDecorator} from "./slider-thumb-decorator";
+import {MatSlider, MatSliderEvent, MatSliderInteractionEvent} from "./slider";
 
 @Directive({
   selector: '[mat-slider-thumb-knob]',
 })
 export class MatSliderThumbKnob implements AfterViewInit {
-  private _thumb: Thumb;
-  private _sliderInput: MatSliderThumb;
+  @Input() thumb: Thumb;
 
   private _isActive: boolean = false;
   private _isFocused: boolean = false;
@@ -44,7 +41,6 @@ export class MatSliderThumbKnob implements AfterViewInit {
   private _showRipple(animation: RippleAnimationConfig): RippleRef {
     return this._ripple.launch({
       animation,
-      centered: true,
       persistent: true,
     });
   }
@@ -53,37 +49,42 @@ export class MatSliderThumbKnob implements AfterViewInit {
     private _slider: MatSlider,
     private _ripple: MatRipple,
     private _elementRef: ElementRef,
-    private _sliderThumb: MatSliderThumbDecorator,
     ) {
       this._ripple.radius = 25;
+      this._ripple.centered = true;
     }
 
   ngAfterViewInit() {
-    this._thumb = this._sliderThumb._getThumb();
-    this._sliderInput = this._slider.getInput(this._thumb);
-
     this._slider.dragEnd.subscribe((event: MatSliderEvent) => this._onDragEnd(event));
     this._slider.dragStart.subscribe((event: MatSliderEvent) => this._onDragStart(event));
 
-    this._sliderInput._blur.subscribe(() => this._onBlur());
-    this._sliderInput._focus.subscribe(() => this._onFocus());
+    this._slider.getInput(this.thumb)._blur.subscribe(() => this._onBlur());
+    this._slider.getInput(this.thumb)._focus.subscribe(() => this._onFocus());
 
-    this._sliderThumb._mouseenter.subscribe(() => this._onMouseEnter());
-    this._sliderThumb._mouseleave.subscribe(() => this._onMouseLeave());
+    this._slider._mouseenter.subscribe((event: MatSliderInteractionEvent) => {
+      this._onMouseEnter(event);
+    });
+    this._slider._mouseleave.subscribe((event: MatSliderInteractionEvent) => {
+      this._onMouseLeave(event);
+    });
   }
 
-  private _onMouseEnter(): void {
-    this._isHovered = true;
-    // We don't want to show the hover ripple on top of the focus ripple.
-    // This can happen if the user tabs to a thumb and then the user moves their cursor over it.
-    if (!this._isShowingRipple(this._focusRippleRef)) {
-      this._showHoverRipple();
+  private _onMouseEnter(event: MatSliderInteractionEvent): void {
+    if (event.thumb === this.thumb) {
+      this._isHovered = true;
+      // We don't want to show the hover ripple on top of the focus ripple.
+      // This can happen if the user tabs to a thumb and then the user moves their cursor over it.
+      if (!this._isShowingRipple(this._focusRippleRef)) {
+        this._showHoverRipple();
+      }
     }
   }
 
-  private _onMouseLeave(): void {
-    this._isHovered = false;
-    this._hoverRippleRef?.fadeOut();
+  private _onMouseLeave(event: MatSliderInteractionEvent): void {
+    if (event.thumb === this.thumb) {
+      this._isHovered = false;
+      this._hoverRippleRef?.fadeOut();
+    }
   }
 
   private _onFocus(): void {
@@ -107,14 +108,14 @@ export class MatSliderThumbKnob implements AfterViewInit {
   }
 
   private _onDragStart(event: MatSliderEvent): void {
-    if (event.sliderThumb.thumb === this._thumb) {
+    if (event.sliderThumb.thumb === this.thumb) {
       this._isActive = true;
       this._showActiveRipple();
     }
   }
 
   private _onDragEnd(event: MatSliderEvent): void {
-    if (event.sliderThumb.thumb === this._thumb) {
+    if (event.sliderThumb.thumb === this.thumb) {
       this._isActive = false;
       this._activeRippleRef?.fadeOut();
       // Happens when the user starts dragging a thumb, tabs away, and then stops dragging.
