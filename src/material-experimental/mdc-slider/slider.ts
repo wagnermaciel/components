@@ -243,15 +243,6 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
   createEvent(value: number, thumb: Thumb): MatSliderEvent {
     return new MatSliderEvent(this, this.getInput(thumb), value);
   }
-  getDocument() {
-    return this._document;
-  }
-  getWindow() {
-    return this._document.defaultView || window;
-  }
-  getRootEl() {
-    return this._elementRef.nativeElement;
-  }
   getThumbEl(thumb: Thumb = Thumb.END): HTMLElement {
     return thumb === Thumb.END ? this.thumbs[this.thumbs.length - 1] : this.thumbs[0];
   }
@@ -288,13 +279,17 @@ export class MatSlider extends _MatSliderMixinBase implements AfterViewInit, OnD
     });
   }
 
+  _hostElement: HTMLElement;
+  _window: Window;
   constructor(
     protected _cdr: ChangeDetectorRef,
-    public _elementRef: ElementRef<HTMLElement>,
     protected _platform: Platform,
-    @Inject(DOCUMENT) protected _document: any,
+    _elementRef: ElementRef<HTMLElement>,
+    @Inject(DOCUMENT) public _document: any,
   ) {
     super(_elementRef);
+    this._hostElement = _elementRef.nativeElement;
+    this._window = _document.defaultView || window;
   }
 
   ngAfterViewInit() {

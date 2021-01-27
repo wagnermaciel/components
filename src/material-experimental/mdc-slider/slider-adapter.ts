@@ -19,16 +19,16 @@ import {MatSlider} from './slider';
 export class SliderAdapter implements MDCSliderAdapter {
   constructor(private readonly _delegate: MatSlider) {}
   hasClass = (className: string): boolean => {
-    return this._delegate.getRootEl().classList.contains(className);
+    return this._delegate._hostElement.classList.contains(className);
   }
   addClass = (className: string): void => {
-    this._delegate.getRootEl().classList.add(className);
+    this._delegate._hostElement.classList.add(className);
   }
   removeClass = (className: string): void => {
-    this._delegate.getRootEl().classList.remove(className);
+    this._delegate._hostElement.classList.remove(className);
   }
   getAttribute = (attribute: string): string | null => {
-    return this._delegate.getRootEl().getAttribute(attribute);
+    return this._delegate._hostElement.getAttribute(attribute);
   }
   addThumbClass = (className: string, thumb: Thumb): void => {
     this._delegate.getThumbEl(thumb).classList.add(className);
@@ -64,7 +64,7 @@ export class SliderAdapter implements MDCSliderAdapter {
     return this._delegate.getThumbEl(thumb).getBoundingClientRect();
   }
   getBoundingClientRect = (): ClientRect => {
-    return this._delegate.getRootEl().getBoundingClientRect();
+    return this._delegate._hostElement.getBoundingClientRect();
   }
   isRTL = (): boolean => {
     return false;
@@ -95,7 +95,7 @@ export class SliderAdapter implements MDCSliderAdapter {
   setPointerCapture = (pointerId: number): void => {
     // TODO(wagnermaciel): we did this to silence unit test errors. figure out if we can avoid this.
     try {
-      this._delegate.getRootEl().setPointerCapture(pointerId);
+      this._delegate._elementRef.nativeElement.setPointerCapture(pointerId);
     } catch (error) {
       console.warn(error);
     }
@@ -113,10 +113,10 @@ export class SliderAdapter implements MDCSliderAdapter {
     this._delegate.dragEnd.emit(this._delegate.createEvent(value, thumb));
   }
   registerEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getRootEl().addEventListener(evtType, handler);
+    this._delegate._hostElement.addEventListener(evtType, handler);
   }
   deregisterEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getRootEl().removeEventListener(evtType, handler);
+    this._delegate._hostElement.removeEventListener(evtType, handler);
   }
   registerThumbEventHandler = <K extends EventType>(thumb: Thumb, evtType: K, handler: SpecificEventListener<K>): void => {
     this._delegate.getThumbEl(thumb).addEventListener(evtType, handler);
@@ -131,15 +131,15 @@ export class SliderAdapter implements MDCSliderAdapter {
     this._delegate.getInputEl(thumb).removeEventListener(evtType, handler);
   }
   registerBodyEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getDocument().body.addEventListener(evtType, handler);
+    this._delegate._document.body.addEventListener(evtType, handler);
   }
   deregisterBodyEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getDocument().body.removeEventListener(evtType, handler);
+    this._delegate._document.body.removeEventListener(evtType, handler);
   }
   registerWindowEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getWindow().addEventListener(evtType, handler);
+    this._delegate._window.addEventListener(evtType, handler);
   }
   deregisterWindowEventHandler = <K extends EventType>(evtType: K, handler: SpecificEventListener<K>): void => {
-    this._delegate.getWindow().removeEventListener(evtType, handler);
+    this._delegate._window.removeEventListener(evtType, handler);
   }
 }
