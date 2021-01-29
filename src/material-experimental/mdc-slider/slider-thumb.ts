@@ -31,17 +31,18 @@ import {MatSlider} from './slider';
   /** The value of this slider input. */
   @Input()
   get value(): string|null {
-    // Normally, we want to use the value attribute (which is set by the MDC foundation), but if
-    // the MDC foundation has not yet been initialized, we default to the value of the input.
-    return this._slider.initialized
-      ? this.getRootEl().getAttribute('value')
-      : this._value;
+    const attrValue = this.getRootEl().getAttribute('value');
+    if (attrValue !== null && this._value !== attrValue) {
+      this._value = attrValue;
+    }
+    return this._value;
   };
   set value(v: string|null) {
     this.initialized = true;
     this._value = v;
-    this.getRootEl().value = v!;
-    this.getRootEl().setAttribute('value', v!);
+    const hostElement = this.getRootEl();
+    hostElement.value = v!;
+    hostElement.setAttribute('value', v!);
     if (this._slider.initialized) {
       this._slider.setValue(coerceNumberProperty(v), this.thumb);
     }
@@ -89,7 +90,17 @@ import {MatSlider} from './slider';
   constructor(
     @Inject(DOCUMENT) private readonly _document: any,
     private _el: ElementRef,
-    private _slider: MatSlider) {}
+    private _slider: MatSlider) {
+      // We need to initialize these values in the constructor because if the value is set by the
+      // developer, the value will be calculated before the min and max are. Because of this
+      // behavior, if we hit the edge case where the value is less than the min or greater than the
+      // max, the value will be set to the min or max respectively instead of the desired/expected
+      // value.
+      const hostElement = this.getRootEl();
+      hostElement.min = this._slider.min.toString();
+      hostElement.max = this._slider.max.toString();
+      hostElement.step = this._slider.step.toString();
+    }
 
   init({ thumb }: { thumb: Thumb }) {
     this.thumb = thumb;
