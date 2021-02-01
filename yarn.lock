@@ -13,7 +13,7 @@
     typescript "4.1.3"
     webpack-sources "2.2.0"
 
-"@angular-devkit/core@11.1.0", "@angular-devkit/core@^11.1.0":
+"@angular-devkit/core@11.1.0":
   version "11.1.0"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-11.1.0.tgz#dec7967df922414f9935365f5ff7938ef6e54a52"
   integrity sha512-O2oIcqpQKGvYJH88d/NCgLYZGc9laA1eo2d1s0FH1Udu4c2L+bAsviQqtTKNmzyaqODHrlkt+eKx7uakdwWtnQ==
@@ -24,12 +24,32 @@
     rxjs "6.6.3"
     source-map "0.7.3"
 
-"@angular-devkit/schematics@11.1.0", "@angular-devkit/schematics@^11.1.0":
+"@angular-devkit/core@11.1.2", "@angular-devkit/core@^11.1.0":
+  version "11.1.2"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-11.1.2.tgz#52aa608c362e0011d6695737d4630262c13c3e3e"
+  integrity sha512-V7zOMqL2l56JcwXVyswkG+7+t67r9XtkrVzRcG2Z5ZYwafU+iKWMwg5kBFZr1SX7fM1M9E4MpskxqtagQeUKng==
+  dependencies:
+    ajv "6.12.6"
+    fast-json-stable-stringify "2.1.0"
+    magic-string "0.25.7"
+    rxjs "6.6.3"
+    source-map "0.7.3"
+
+"@angular-devkit/schematics@11.1.0":
   version "11.1.0"
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-11.1.0.tgz#451ed0a5c4fe9ac3cf367f4ecf7adac15430c2c8"
   integrity sha512-6qfR5w1jyk8MC+5Tfimz+Czsq3WlsVoB57dpxSZfhGGsv1Vxc8Q41y5f3BrAyEqHYjcH7NtaoLQoJjtra5KaAg==
   dependencies:
     "@angular-devkit/core" "11.1.0"
+    ora "5.2.0"
+    rxjs "6.6.3"
+
+"@angular-devkit/schematics@^11.1.0":
+  version "11.1.2"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-11.1.2.tgz#454ad37cc6d28520336ac7ebfe4f2644dc3050bd"
+  integrity sha512-wIWI4+EPsjbN+23Rs0zE4GarKrUm8gMR3MpGAtlEmGG2ZsXEVdfiKUebBdWGrx0sEfgLN9JfePbZQFvqN5ifyw==
+  dependencies:
+    "@angular-devkit/core" "11.1.2"
     ora "5.2.0"
     rxjs "6.6.3"
 
@@ -4322,9 +4342,9 @@ copy-props@^2.0.1:
     is-plain-object "^2.0.1"
 
 core-js-bundle@^3.8.2:
-  version "3.8.2"
-  resolved "https://registry.yarnpkg.com/core-js-bundle/-/core-js-bundle-3.8.2.tgz#348fb8a977fbff761255408b625d97d3153b1346"
-  integrity sha512-pTwrW41+ISaAY9JbJISKdTpOCZ+vMdM9ygd6hG9yolYwbOLb8UqTLsZwpRH9/Nv14pdKgMtJXd7Tn3xDsuhRBA==
+  version "3.8.3"
+  resolved "https://registry.yarnpkg.com/core-js-bundle/-/core-js-bundle-3.8.3.tgz#7101cd715b899f61c24337567f34829a88badc7a"
+  integrity sha512-6qO6XcxGqPqCpv9wkNlhUe113Nbkw82lfeJJLDLojPbcSRBfzHWJT8T7z9sGCeYPr5dtBM10xSs6NOVjxi35rQ==
 
 core-js@^2.4.0:
   version "2.6.12"
@@ -5823,9 +5843,9 @@ fined@^1.0.1:
     parse-filepath "^1.0.1"
 
 firebase-tools@^9.2.1:
-  version "9.2.1"
-  resolved "https://registry.yarnpkg.com/firebase-tools/-/firebase-tools-9.2.1.tgz#484ed2f492ea2abd2d341b9dafb0e585f4e9f229"
-  integrity sha512-sD4wfB5hs/8IKXV6AJOmkpvXf/St7gVc9QeW4Qz21PG7CkirgRf6FqcYkPKtBcro4wfj48dihnYx/IO1+XPTGg==
+  version "9.2.2"
+  resolved "https://registry.yarnpkg.com/firebase-tools/-/firebase-tools-9.2.2.tgz#2379721a862ba537f830fb8072ca0bf70388a114"
+  integrity sha512-AFjf7S9NjEM+u8ZByJEKASxRG1g+LLg/A0CrzA3V91P92MN+8cyrCigEs7mCdtFknLaShrCgzROyo/OEwd4xdA==
   dependencies:
     "@google-cloud/pubsub" "^2.7.0"
     JSONStream "^1.2.1"
@@ -12822,10 +12842,10 @@ trough@^1.0.0:
   dependencies:
     glob "^7.1.2"
 
-ts-api-guardian@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/ts-api-guardian/-/ts-api-guardian-0.5.0.tgz#1b63546dfd61581054802bdc8d5915ceebcc2c35"
-  integrity sha512-BjVlb23FUqWU+wmdHkLdaHcllU+v/Cca26sY40bCkM15BCF2yc17daOm+UXyvxQ9NndPM/40m+X+GLyDkrE9tA==
+ts-api-guardian@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/ts-api-guardian/-/ts-api-guardian-0.6.0.tgz#9f44cf9bad1db5de358ccca7b4e6fb1d2c7fe462"
+  integrity sha512-DVA+UgPI1TVRI7GNDG1XBxwGs+cKqJq1os00txr52TUxBPwsUWWT7f83VHWvPQvh7G2wj93U/dTUBeDq3FIDTg==
   dependencies:
     chalk "^2.3.1"
     diff "^3.5.0"
@@ -12913,9 +12933,9 @@ tsutils@^2.29.0:
     tslib "^1.8.1"
 
 tsutils@^3.0.0, tsutils@^3.17.1:
-  version "3.19.1"
-  resolved "https://registry.yarnpkg.com/tsutils/-/tsutils-3.19.1.tgz#d8566e0c51c82f32f9c25a4d367cd62409a547a9"
-  integrity sha512-GEdoBf5XI324lu7ycad7s6laADfnAqCw6wLGI+knxvw9vsIYBaJfYdmeCEG3FMMUiSm3OGgNb+m6utsWf5h9Vw==
+  version "3.20.0"
+  resolved "https://registry.yarnpkg.com/tsutils/-/tsutils-3.20.0.tgz#ea03ea45462e146b53d70ce0893de453ff24f698"
+  integrity sha512-RYbuQuvkhuqVeXweWT3tJLKOEJ/UUw9GjNEZGWdrLLlM+611o1gwLHBpxoFJKKl25fLprp2eVthtKs5JOrNeXg==
   dependencies:
     tslib "^1.8.1"
 
