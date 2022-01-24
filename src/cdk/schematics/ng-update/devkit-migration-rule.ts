@@ -18,7 +18,7 @@ import {getTargetTsconfigPath, getWorkspaceConfigGracefully} from '../utils/proj
 
 import {DevkitFileSystem} from './devkit-file-system';
 import {DevkitContext, DevkitMigration, DevkitMigrationCtor} from './devkit-migration';
-import {findStylesheetFiles} from './find-stylesheets';
+import {findStylesheetFiles} from './find-files';
 import {AttributeSelectorsMigration} from './migrations/attribute-selectors';
 import {ClassInheritanceMigration} from './migrations/class-inheritance';
 import {ClassNamesMigration} from './migrations/class-names';
