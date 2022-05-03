@@ -19,9 +19,12 @@ import {MatTabsModule} from '@angular/material-experimental/mdc-tabs';
   imports: [FormsModule, MatSliderModule, MatTabsModule],
 })
 export class MdcSliderDemo {
-  demo: number;
-  val: number = 50;
+  demo: number = 0;
+  val: number = 0;
   min: number = 0;
   max: number = 100;
   disabledValue = 0;
+  print(...things: any[]) {
+    console.log(...things);
+  }
 }

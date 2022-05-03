@@ -1,7 +1,7 @@
-<h1>Default Slider</h1>
+<!-- <h1>Default Slider</h1>
 <span>Label</span>
 <mat-slider>
-  <input #slidey matSliderThumb>
+  <input #slidey [(value)]="val" matSliderThumb>
 </mat-slider>
 {{slidey.value}}
 
@@ -18,7 +18,7 @@
 
 <h1>Slider with Min and Max</h1>
 <input [(ngModel)]="min" type="number">
-<mat-slider [min]="min" [max]="max" step="5" discrete showTickMarks>
+<mat-slider [min]="min" [max]="max" discrete showTickMarks>
   <input #slider2 matSliderThumb>
 </mat-slider>
 {{slider2.value}}
@@ -58,15 +58,15 @@
 <mat-slider step="10">
   <input [value]="val" matSliderThumb>
 </mat-slider>
-<input [(ngModel)]="val" type="number">
+<input [(ngModel)]="val" type="number"> -->
 
 <h1>Slider with two-way binding</h1>
 <mat-slider step="40">
   <input [(ngModel)]="demo" matSliderThumb>
 </mat-slider>
-<input [(ngModel)]="demo" type="number">
+<!-- <input [(ngModel)]="demo" type="number"> -->
 
-<h1>Set/lost focus to show thumblabel programmatically</h1>
+<!-- <h1>Set/lost focus to show thumblabel programmatically</h1>
 <mat-slider discrete>
   <input #demoSlider="matSliderThumb" matSliderThumb>
 </mat-slider>
@@ -75,7 +75,7 @@
 
 <mat-tab-group>
   <mat-tab label="One">
-    <mat-slider min="1" max="5">
+    <mat-slider min="1" max="5" [style.width]="'100%'">
       <input value="3" matSliderThumb>
     </mat-slider>
   </mat-tab>
@@ -85,4 +85,4 @@
 <mat-slider min="200" max="500" step="100" discrete showTickMarks>
   <input value="300" matSliderStartThumb>
   <input value="400" matSliderEndThumb>
-</mat-slider>
+</mat-slider> -->
