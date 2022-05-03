@@ -56,6 +56,9 @@ import {calcThumbPositions, mapClientXOnSliderScale, getNumDecimalPlaces} from '
 
 /** Represents an event emitted by the MatSlider component. */
 export class MatSliderEvent {
+  /** The html element that was the target of the event. */
+  target: HTMLInputElement;
+
   /** The MatSliderThumb that was interacted with. */
   source: MatSliderThumb;
 
@@ -314,13 +317,12 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
       this._slider._getInput(Thumb.END)?._setMinAndMax();
     }
 
-    console.log('a');
-    // this.input.emit({
-    //   value: this._value,
-    //   source: this,
-    //   parent: this._slider,
-    // });
-    console.log('b');
+    this.input.emit({
+      target: this._hostElement,
+      value: this._value,
+      source: this,
+      parent: this._slider,
+    });
 
     this._slider._updateUI(this._thumbPosition);
   }
@@ -468,6 +470,7 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
     this._valueOnDragStart = this.value;
     this.focus();
     this.dragStart.emit({
+      target: this._hostElement,
       source: this,
       parent: this._slider,
       value: this.value,
@@ -476,6 +479,7 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
 
   _onDragEnd(): void {
     this.dragEnd.emit({
+      target: this._hostElement,
       source: this,
       parent: this._slider,
       value: this.value,
@@ -547,6 +551,7 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
 
   _onChange(): void {
     this.change.emit({
+      target: this._hostElement,
       source: this,
       parent: this._slider,
       value: this._value,
@@ -855,11 +860,6 @@ export class MatSlider
         }
         this._activeInput._onDragStart();
       }
-      const eeee = new MatSliderEvent();
-      eeee.value = this._activeInput.value;
-      eeee.source = this._activeInput;
-      eeee.parent = this;
-      this._activeInput.input.emit(eeee);
       this._activeInput!.value = this._mapClientXOnSliderScale(mousemoveEvent.clientX);
     });
   };
