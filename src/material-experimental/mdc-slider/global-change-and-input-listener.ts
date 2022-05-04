@@ -43,7 +43,7 @@ export class GlobalChangeAndInputListener<K extends 'change' | 'input' | 'mousem
   }
 
   /** Returns a subscription to global change or input events. */
-  listen(type: K, callback: (e: Event | MouseEvent) => void): Subscription {
+  listen(type: K, callback: (e: Event) => void): Subscription {
     // If this is the first time we are listening to this event, create the observable for it.
     if (!this._observables.has(type)) {
       this._observables.set(type, this._createGlobalEventObservable(type));
@@ -52,7 +52,7 @@ export class GlobalChangeAndInputListener<K extends 'change' | 'input' | 'mousem
     return this._ngZone.runOutsideAngular(() =>
       this._observables
         .get(type)!
-        .subscribe((event: Event | MouseEvent) => this._ngZone.run(() => callback(event))),
+        .subscribe((event: Event) => this._ngZone.run(() => callback(event))),
     );
   }
 

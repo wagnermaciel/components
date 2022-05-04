@@ -125,7 +125,7 @@ export class MatSliderVisualThumb implements AfterViewInit, OnDestroy {
   private _isActive: boolean = false;
 
   /** Whether the slider thumb is currently being hovered. */
-  private _isHovered: boolean = false;
+  _isHovered: boolean = false;
 
   constructor(
     private readonly _ngZone: NgZone,
@@ -294,54 +294,48 @@ export class MatSliderVisualThumb implements AfterViewInit, OnDestroy {
     },
   ],
 })
-export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDestroy {
+export class MatSliderThumb implements ControlValueAccessor, OnDestroy {
+  /** The slider thumb input value. */
   @Input()
   get value(): number {
     return this._value;
   }
   set value(v: NumberInput) {
-    this._hostElement.value = coerceNumberProperty(v).toString(); // <-- this value can be
-    const value = coerceNumberProperty(this._hostElement.value); // <-- different from this value
-
-    // do nothing if value has not changed
-    if (value === this._value) {
+    if (!this._setValue(v)) {
       return;
     }
-    this._value = value;
-
-    // notify other thumb that sibling thumb value has changed
-    if (this._thumbPosition === Thumb.END && this._slider._isRange) {
-      this._slider._getInput(Thumb.START)?._setMinAndMax();
-    }
-    if (this._thumbPosition === Thumb.START) {
-      this._slider._getInput(Thumb.END)?._setMinAndMax();
-    }
-
     this.input.emit({
       target: this._hostElement,
       value: this._value,
       source: this,
       parent: this._slider,
     });
-
     this._slider._updateUI(this._thumbPosition);
   }
   private _value: number = 50;
 
+  /** The minimum accepted value for this slider thumb input. */
   @Input()
   get min(): number {
     return this._min;
   }
   set min(v: NumberInput) {
     this._hostElement.min = coerceNumberProperty(v).toString();
+
+    // todo: for range sliders, start thumb min should stop at 1 before value of end thumb
     const min = coerceNumberProperty(this._hostElement.min);
     if (min === this._min) {
       return;
     }
     this._min = min;
+    if (this.value < min) {
+      this._setValue(min);
+      this._siblingThumb?._setMinAndMax();
+    }
   }
   private _min: number = 0;
 
+  /** The maximum accepted value for this slider thumb input. */
   @Input()
   get max(): number {
     return this._max;
@@ -349,28 +343,14 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
   set max(v: NumberInput) {
     this._hostElement.max = coerceNumberProperty(v).toString();
     const max = coerceNumberProperty(this._hostElement.max);
-    if (max === this._max) {
-      return;
+    if (this.value > max) {
+      this._setValue(max);
     }
-    this._max = max;
+    if (max !== this._max) {
+      this._max = max;
+    }
   }
   private _max: number = 0;
-
-  private _calcMinAndMax(): {min: number; max: number} {
-    return {
-      min:
-        this._slider._isRange && this._thumbPosition === Thumb.END
-          ? this._slider._getInput(Thumb.START).value
-          : this._slider.min,
-      max:
-        this._slider._isRange && this._thumbPosition === Thumb.START
-          ? this._slider._getInput(Thumb.END).value
-          : this._slider.max,
-    };
-  }
-
-  @Output() readonly input: EventEmitter<MatSliderEvent> = new EventEmitter<MatSliderEvent>();
-  @Output() readonly change: EventEmitter<MatSliderEvent> = new EventEmitter<MatSliderEvent>();
 
   /**
    * Emits when the raw value of the slider changes. This is here primarily
@@ -378,6 +358,12 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
    * @docs-private
    */
   @Output() readonly valueChange: EventEmitter<number> = new EventEmitter<number>();
+
+  /** Event emitted when the slider thumb value changes. */
+  @Output() readonly input: EventEmitter<MatSliderEvent> = new EventEmitter<MatSliderEvent>();
+
+  /** Event emitted when an alteration to the slider thumb value is committed by the user. */
+  @Output() readonly change: EventEmitter<MatSliderEvent> = new EventEmitter<MatSliderEvent>();
 
   /** Event emitted when the slider thumb starts being dragged. */
   @Output() readonly dragStart: EventEmitter<MatSliderEvent> = new EventEmitter<MatSliderEvent>();
@@ -415,8 +401,26 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
     ? Thumb.START
     : Thumb.END;
 
+  /** The sibling slider thumb input. Null if there is no sibling thumb input. */
+  get _siblingThumb(): MatSliderThumb | null {
+    if (!this._slider._isRange) {
+      return null;
+    }
+    if (this.__siblingThumb) {
+      return this.__siblingThumb;
+    }
+    this.__siblingThumb = this._slider._getInput(
+      this._thumbPosition === Thumb.END ? Thumb.START : Thumb.END,
+    );
+    return this.__siblingThumb;
+  }
+  private __siblingThumb: MatSliderThumb | null = null;
+
   /** The injected document if available or fallback to the global document reference. */
   private _document: Document;
+
+  /** Stores the value of the slider thumb on drag start. */
+  private _valueOnDragStart: number | null = null;
 
   /** The host native HTML input element. */
   _hostElement: HTMLInputElement;
@@ -432,24 +436,7 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
     this._hostElement.min = this._slider.min.toString();
     this._hostElement.max = this._slider.max.toString();
     this._hostElement.step = this._slider.step.toString();
-  }
-
-  _setValue(v: number) {
-    this._hostElement.value = v?.toString();
-    this._value = coerceNumberProperty(this._hostElement.value);
-  }
-
-  _setMinAndMax() {
-    const {min, max} = this._calcMinAndMax();
-    this.min = min;
-    this.max = max;
-  }
-
-  ngAfterViewInit() {
-    // Setup for the MDC foundation.
-    if (this._slider.disabled) {
-      this._hostElement.disabled = true;
-    }
+    this._hostElement.disabled = this._slider.disabled;
   }
 
   ngOnDestroy() {
@@ -460,12 +447,42 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
     this.valueChange.complete();
   }
 
+  _onKeydown(e: KeyboardEvent): void {
+    const prev = this._value;
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault();
+        this._slider._isRtl
+          ? (this.value! -= this._slider.step)
+          : (this.value! += this._slider.step);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        this._slider._isRtl
+          ? (this.value! += this._slider.step)
+          : (this.value! -= this._slider.step);
+        break;
+    }
+    if (this.value !== prev) {
+      this._onChange();
+    }
+  }
+
+  _onChange(): void {
+    this.change.emit({
+      target: this._hostElement,
+      source: this,
+      parent: this._slider,
+      value: this._value,
+    });
+    this._registeredOnChangeFn(this._value);
+  }
+
   _onBlur(): void {
     this._onTouched();
     this._blur.emit();
   }
 
-  _valueOnDragStart: number | null = null;
   _onDragStart(): void {
     this._valueOnDragStart = this.value;
     this.focus();
@@ -488,6 +505,57 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
       this._onChange();
     }
     this._valueOnDragStart = null;
+  }
+
+  /** Focuses the slider thumb input element. */
+  focus(): void {
+    this._hostElement.focus();
+  }
+
+  /** Removes focus from the slider thumb input element. */
+  blur(): void {
+    this._hostElement.blur();
+  }
+
+  /** Returns true if this slider input currently has focus. */
+  _isFocused(): boolean {
+    return this._document.activeElement === this._hostElement;
+  }
+
+  /**
+   * ONLY sets the slider input value.
+   * Does not emit any events or trigger any UI updates.
+   *
+   * @param v a new slider input value
+   * @returns true if the slider input value changes
+   */
+  private _setValue(v: NumberInput): boolean {
+    this._hostElement.value = coerceNumberProperty(v).toString();
+    const value = coerceNumberProperty(this._hostElement.value);
+    if (this.value === value) {
+      return false;
+    }
+    this._value = value;
+    if (this._slider._isRange) {
+      this._siblingThumb!._setMinAndMax();
+    }
+    return true;
+  }
+
+  /** Sets the min and max of the slider thumb input. */
+  _setMinAndMax() {
+    this._setMin();
+    this.max =
+      this._slider._isRange && this._thumbPosition === Thumb.START
+        ? this._siblingThumb!.value
+        : this._slider.max;
+  }
+
+  private _setMin() {
+    this.min =
+      this._slider._isRange && this._thumbPosition === Thumb.END
+        ? this._siblingThumb!.value
+        : this._slider.min;
   }
 
   /**
@@ -524,52 +592,6 @@ export class MatSliderThumb implements AfterViewInit, ControlValueAccessor, OnDe
    */
   setDisabledState(isDisabled: boolean): void {
     this._disabled = isDisabled;
-  }
-
-  _onKeydown(e: KeyboardEvent): void {
-    const prev = this._value;
-
-    switch (e.key) {
-      case 'ArrowRight':
-        e.preventDefault();
-        this._slider._isRtl
-          ? (this.value! -= this._slider.step)
-          : (this.value! += this._slider.step);
-        break;
-      case 'ArrowLeft':
-        e.preventDefault();
-        this._slider._isRtl
-          ? (this.value! += this._slider.step)
-          : (this.value! -= this._slider.step);
-        break;
-    }
-
-    if (this.value !== prev) {
-      this._onChange();
-    }
-  }
-
-  _onChange(): void {
-    this.change.emit({
-      target: this._hostElement,
-      source: this,
-      parent: this._slider,
-      value: this._value,
-    });
-    this._registeredOnChangeFn(this._value);
-  }
-
-  focus(): void {
-    this._hostElement.focus();
-  }
-
-  blur(): void {
-    this._hostElement.blur();
-  }
-
-  /** Returns true if this slider input currently has focus. */
-  _isFocused(): boolean {
-    return this._document.activeElement === this._hostElement;
   }
 }
 
@@ -651,19 +673,12 @@ export class MatSlider
     return this._min;
   }
   set min(v: NumberInput) {
-    const min = coerceNumberProperty(v, this._min);
+    const min = Math.min(coerceNumberProperty(v, this._min), this.max - 1);
     this._min = min;
-
-    const endInput = this._getInput(Thumb.END);
-    const startInput = this._getInput(Thumb.START);
-
-    if (endInput) {
-      endInput.min = min;
+    const lesserInput = this._getInput(this._isRange ? Thumb.START : Thumb.END);
+    if (lesserInput) {
+      lesserInput.min = min;
     }
-    if (startInput) {
-      startInput.min = min;
-    }
-
     this._updateUI();
   }
   private _min: number = 0;
@@ -674,19 +689,12 @@ export class MatSlider
     return this._max;
   }
   set max(v: NumberInput) {
-    const max = coerceNumberProperty(v, this._max);
+    const max = Math.max(coerceNumberProperty(v, this._max), this.min + 1);
     this._max = max;
-
-    const endInput = this._getInput(Thumb.END);
-    const startInput = this._getInput(Thumb.START);
-
-    if (endInput) {
-      endInput.max = max;
+    const greaterInput = this._getInput(this._isRange ? Thumb.END : Thumb.START);
+    if (greaterInput) {
+      greaterInput.max = max;
     }
-    if (startInput) {
-      startInput.max = max;
-    }
-
     this._updateUI();
   }
   private _max: number = 100;
@@ -719,6 +727,7 @@ export class MatSlider
   private _dirChangeSubscription: Subscription;
 
   private _mouseMoveSubscription: Subscription | null = null;
+  private _mouseUpSubscription: Subscription | null = null;
 
   /** Observer used to monitor size changes in the slider. */
   private _resizeObserver: ResizeObserver | null;
@@ -760,19 +769,10 @@ export class MatSlider
     this._noopAnimations = animationMode === 'NoopAnimations';
     this._dirChangeSubscription = this._dir.change.subscribe(() => this._onDirChange());
     this._isRtl = this._dir.value === 'rtl';
-
-    this._globalListener.listen('mouseup', e => {
-      if (!this._activeInput) return;
-      this._mouseMoveSubscription?.unsubscribe();
-      this._mouseMoveSubscription = null;
-      this._activeInput._onDragEnd();
-      this._activeInput = null;
-    });
   }
 
   ngAfterViewInit(): void {
     if (typeof ngDevMode === 'undefined' || ngDevMode) {
-      _validateThumbs(this._isRange, this._getThumb(Thumb.START), this._getThumb(Thumb.END));
       _validateInputs(this._isRange, this._getInput(Thumb.START), this._getInput(Thumb.END));
     }
     this._observeHostResize();
@@ -808,59 +808,68 @@ export class MatSlider
 
   private _determineActiveInput(value: number): MatSliderThumb | null {
     const endInput = this._getInput(Thumb.END);
+    const endThumb = this._getThumb(Thumb.END);
+    const startInput = this._getInput(Thumb.START);
+    const startThumb = this._getThumb(Thumb.START);
 
-    if (!this._isRange) {
+    if (!this._isRange || endThumb._isHovered || value >= endInput.value) {
       return endInput;
     }
 
-    const startInput = this._getInput(Thumb.START);
-    const {thumbLeftPos, thumbRightPos} = this._calcThumbPositions({
-      endValue: endInput.value,
-      startValue: startInput.value,
-    });
-
-    // need to use thumb position, not value
-    // prob breaks for rtl
-    if (value <= startInput.value) {
+    if (startThumb._isHovered || value <= startInput.value) {
       return startInput;
     }
 
-    if (value >= endInput.value) {
-      return endInput;
-    }
-
-    // todo: figure out tie breaker
     return null;
   }
 
-  _onMousedown = (mousedownEvent: any): void => {
-    this._rect = this._elementRef.nativeElement.getBoundingClientRect();
-    const value = this._mapClientXOnSliderScale(mousedownEvent.clientX);
+  private _onMouseUp = (): void => {
+    this._mouseUpSubscription?.unsubscribe();
+    this._mouseUpSubscription = null;
+    this._mouseMoveSubscription?.unsubscribe();
+    this._mouseMoveSubscription = null;
+    if (!this._activeInput) {
+      return;
+    }
+    this._activeInput._onDragEnd();
+    this._activeInput = null;
+  };
 
-    this._activeInput = this._determineActiveInput(value);
-
+  private _onMouseMove = (event: MouseEvent): void => {
     if (this._activeInput) {
-      this._activeInput._onDragStart();
-      this._activeInput.value = value;
+      this._activeInput!.value = this._mapClientXOnSliderScale(event.clientX);
+      return;
+    }
+    if (event.clientX === event.clientX) {
+      return;
+    }
+    this._activeInput = this._tiebreak(event);
+    this._activeInput._onDragStart();
+    this._activeInput!.value = this._mapClientXOnSliderScale(event.clientX);
+  };
+
+  _onMousedown = (mousedownEvent: any): void => {
+    mousedownEvent.preventDefault();
+    if (this.disabled) {
+      return;
     }
 
-    mousedownEvent.preventDefault();
+    this._rect = this._elementRef.nativeElement.getBoundingClientRect();
+    const valueOnMouseDown = this._mapClientXOnSliderScale(mousedownEvent.clientX);
+    this._activeInput = this._determineActiveInput(valueOnMouseDown);
+    if (this._activeInput) {
+      this._activeInput._onDragStart();
+      this._activeInput.value = valueOnMouseDown;
+    }
 
-    if (this._mouseMoveSubscription) return;
+    this._mouseUpSubscription = this._globalListener.listen('mouseup', this._onMouseUp);
+
+    if (this._mouseMoveSubscription) {
+      return;
+    }
+
     this._mouseMoveSubscription = this._globalListener.listen('mousemove', e => {
-      const mousemoveEvent = e as MouseEvent;
-      if (!this._activeInput) {
-        if (mousedownEvent.clientX === mousemoveEvent.clientX) {
-          return;
-        }
-        if (mousemoveEvent.clientX < mousedownEvent.clientX) {
-          this._activeInput = this._getInput(Thumb.END);
-        } else {
-          this._activeInput = this._getInput(Thumb.START);
-        }
-        this._activeInput._onDragStart();
-      }
-      this._activeInput!.value = this._mapClientXOnSliderScale(mousemoveEvent.clientX);
+      this._onMouseMove(e as MouseEvent);
     });
   };
 
@@ -868,6 +877,15 @@ export class MatSlider
   private _onDirChange(): void {
     this._isRtl = this._dir.value === 'rtl';
     this._staticUpdateUI();
+  }
+
+  private _tiebreak(event: MouseEvent): MatSliderThumb {
+    const endThumb = this._getInput(Thumb.END);
+    const startThumb = this._getInput(Thumb.START);
+    if (event.clientX < event.clientX) {
+      return this._isRtl ? startThumb : endThumb;
+    }
+    return this._isRtl ? endThumb : startThumb;
   }
 
   private _staticUpdateUI(): void {
@@ -924,9 +942,6 @@ export class MatSlider
       return;
     }
 
-    // MDC only updates the slider when the window is resized which
-    // doesn't capture changes of the container itself. We use a resize
-    // observer to ensure that the layout is correct (see #24590).
     this._ngZone.runOutsideAngular(() => {
       this._resizeObserver = new ResizeObserver(() => {
         const rect = this._elementRef.nativeElement.getBoundingClientRect();
@@ -999,17 +1014,6 @@ function _validateInputs(
   );
 
   if (!startValid || !endValid) {
-    _throwInvalidInputConfigurationError();
-  }
-}
-
-/** Validates that the slider has the correct set of thumbs. */
-function _validateThumbs(
-  isRange: boolean,
-  start: MatSliderVisualThumb | undefined,
-  end: MatSliderVisualThumb | undefined,
-): void {
-  if (!end && (!isRange || !start)) {
     _throwInvalidInputConfigurationError();
   }
 }
