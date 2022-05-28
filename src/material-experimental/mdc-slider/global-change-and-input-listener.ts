@@ -8,7 +8,6 @@
 
 import {DOCUMENT} from '@angular/common';
 import {Inject, Injectable, NgZone, OnDestroy} from '@angular/core';
-import {SpecificEventListener} from '@material/base';
 import {fromEvent, Observable, Subject, Subscription} from 'rxjs';
 import {finalize, share, takeUntil} from 'rxjs/operators';
 
@@ -21,7 +20,9 @@ import {finalize, share, takeUntil} from 'rxjs/operators';
  * listener once the last observer unsubscribes.
  */
 @Injectable({providedIn: 'root'})
-export class GlobalChangeAndInputListener<K extends 'change' | 'input'> implements OnDestroy {
+export class GlobalChangeAndInputListener<K extends 'change' | 'input' | 'mousemove' | 'mouseup'>
+  implements OnDestroy
+{
   /** The injected document if available or fallback to the global document reference. */
   private _document: Document;
 
@@ -42,7 +43,7 @@ export class GlobalChangeAndInputListener<K extends 'change' | 'input'> implemen
   }
 
   /** Returns a subscription to global change or input events. */
-  listen(type: K, callback: SpecificEventListener<K>): Subscription {
+  listen(type: K, callback: (e: Event) => void): Subscription {
     // If this is the first time we are listening to this event, create the observable for it.
     if (!this._observables.has(type)) {
       this._observables.set(type, this._createGlobalEventObservable(type));

@@ -11,17 +11,8 @@ import {Component} from '@angular/core';
 @Component({
   selector: 'mdc-slider-e2e',
   template: `
-    <mat-slider id="standard-slider" discrete>
+    <mat-slider id="standard-slider">
       <input aria-label="Standard slider" matSliderThumb>
-    </mat-slider>
-
-    <mat-slider id="disabled-slider" disabled>
-      <input aria-label="Disabled slider" matSliderThumb>
-    </mat-slider>
-
-    <mat-slider id="range-slider">
-      <input aria-label="Range slider start thumb" matSliderStartThumb>
-      <input aria-label="Range slider end thumb" matSliderEndThumb>
     </mat-slider>
     `,
 })
