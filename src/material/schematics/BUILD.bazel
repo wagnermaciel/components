@@ -5,9 +5,7 @@ package(default_visibility = ["//visibility:public"])
 
 copy_to_bin(
     name = "schematics_assets",
-    srcs = [
-        "ng-update/migrations/hammer-gestures-v9/gesture-config.template",
-    ] + glob([
+    srcs = glob([
         "ng-generate/*/files/**/*",
         "**/*.json",
     ]),
@@ -19,7 +17,6 @@ ts_library(
         ["**/*.ts"],
         exclude = [
             "**/*.spec.ts",
-            "ng-update/test-cases/**/*.ts",
             "ng-generate/*/files/**/*.ts",
         ],
     ),
@@ -48,6 +45,7 @@ pkg_npm(
     deps = [
         ":schematics",
         ":schematics_assets",
+        "//src/material/schematics/ng-update:ng_update_index",
     ],
 )
 

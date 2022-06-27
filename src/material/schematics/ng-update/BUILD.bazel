@@ -1,0 +1,91 @@
+load("//tools:defaults.bzl", "esbuild", "jasmine_node_test", "spec_bundle", "ts_library")
+
+ts_library(
+    name = "ng_update_lib",
+    srcs = glob(
+        ["**/*.ts"],
+        exclude = [
+            "test-cases/**/*.ts",
+        ],
+    ),
+    deps = [
+        "//src/cdk/schematics",
+        "@npm//@angular-devkit/core",
+        "@npm//@angular-devkit/schematics",
+        "@npm//@schematics/angular",
+        "@npm//@types/node",
+        "@npm//typescript",
+    ],
+)
+
+esbuild(
+    name = "ng_update_index",
+    entry_point = ":index.ts",
+    external = [
+        "@angular/cdk/schematics",
+        "@schematics/angular",
+        "@angular-devkit/schematics",
+        "@angular-devkit/core",
+        "typescript",
+    ],
+    # TODO: Switch to ESM when Angular CLI supports it.
+    format = "cjs",
+    output = "index_bundled.js",
+    platform = "node",
+    target = "es2015",
+    visibility = ["//src/material/schematics:__pkg__"],
+    deps = [":ng_update_lib"],
+)
+
+#################
+## Specs
+#################
+
+filegroup(
+    name = "schematics_test_cases",
+    testonly = True,
+    srcs = glob([
+        "test-cases/**/*_input.ts",
+        "test-cases/**/*_expected_output.ts",
+    ]),
+)
+
+ts_library(
+    name = "test_lib",
+    testonly = True,
+    srcs = glob(["**/*.spec.ts"]),
+    deps = [
+        ":ng_update_lib",
+        "//src/cdk/schematics",
+        "//src/cdk/schematics/testing",
+        "//src/material/schematics",
+        "@npm//@angular-devkit/schematics",
+        "@npm//@types/jasmine",
+        "@npm//@types/node",
+    ],
+)
+
+spec_bundle(
+    name = "unit_tests_bundle",
+    # Exclude the `node` devkit entry-point to avoid bundling native modules like
+    # `chokidar` and `fsevents`. These rely on native bindings and break with ESBuild.
+    external = ["@angular-devkit/core/node"],
+    platform = "node",
+    deps = [":test_lib"],
+)
+
+jasmine_node_test(
+    name = "test",
+    data = [
+        # Runtime dependencies needed by the test and actual migration sources. These need
+        # to be specified explicitly here because they are not captured by the bundling.
+        "//src/cdk/schematics",
+        "@npm//@schematics/angular",
+        # TODO
+        ":ng_update_index",
+        ":schematics_test_cases",
+    ],
+    deps = [
+        ":unit_tests_bundle",
+    ],
+)

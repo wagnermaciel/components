@@ -1,3 +1,4 @@
+export const gestureConfigTemplate = `
 /**
  * Custom HammerJS configuration forked from Angular Material. With Angular v9,
  * Angular Material dropped HammerJS as a dependency. This configuration was added
@@ -66,11 +67,11 @@ export class GestureConfig extends HammerGestureConfig {
     const press = new hammer.Press();
 
     // Notice that a HammerJS recognizer can only depend on one other recognizer once.
-    // Otherwise the previous `recognizeWith` will be dropped.
+    // Otherwise the previous \`recognizeWith\` will be dropped.
     const slide = this._createRecognizer(pan, {event: 'slide', threshold: 0}, swipe);
     const longpress = this._createRecognizer(press, {event: 'longpress', time: 500});
 
-    // Overwrite the default `pan` event to use the swipe event.
+    // Overwrite the default \`pan\` event to use the swipe event.
     pan.recognizeWith(swipe);
 
     // Since the slide event threshold is set to zero, the slide recognizer can fire and
@@ -94,3 +95,4 @@ export class GestureConfig extends HammerGestureConfig {
     return recognizer;
   }
 }
+`;
