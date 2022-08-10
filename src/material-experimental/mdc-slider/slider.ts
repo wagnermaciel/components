@@ -208,7 +208,7 @@ export class MatSliderVisualThumb implements AfterViewInit, OnDestroy {
   };
 
   private _onDragEnd = (): void => {
-    (this as {_isActive: boolean})._isActive = true;
+    (this as {_isActive: boolean})._isActive = false;
     this._hideRipple(this._activeRippleRef);
     // Happens when the user starts dragging a thumb, tabs away, and then stops dragging.
     if (!this._sliderInput._isFocused) {
@@ -515,6 +515,7 @@ class MatSliderThumbBase implements OnInit, OnDestroy {
     if (!this._isActive || !this._isFocused) {
       this._updateThumbUIByValue();
       this._updateTrackActiveStyles();
+      this._slider.onNgControlValueChange();
     }
     this._slider.disabled = this._formControl!.disabled;
   }
@@ -851,6 +852,9 @@ export class MatSlider
   extends _MatSliderMixinBase
   implements AfterContentInit, AfterViewInit, CanDisableRipple, OnDestroy
 {
+  onNgControlValueChange() {
+    this._updateNumTickMarks();
+  }
   _setValue(v: number, thumbPosition: Thumb) {
     const input = this._getInput(thumbPosition);
     if (input) {
@@ -1010,6 +1014,9 @@ export class MatSlider
         input.step = this._step;
         input._updateThumbUIByValue();
         input._updateTrackActiveStyles();
+        this._setTickMarkTrackWidth();
+        this._updateNumTickMarks();
+        this._cdr.markForCheck();
       }
       return;
     }
@@ -1034,6 +1041,10 @@ export class MatSlider
     endInput.value < prevStartValue
       ? this._updateThumbUIs(startInput, endInput)
       : this._updateThumbUIs(endInput, startInput);
+
+    this._setTickMarkTrackWidth();
+    this._updateNumTickMarks();
+    this._cdr.markForCheck();
   }
   private _step: number = 0;
 
@@ -1074,6 +1085,18 @@ export class MatSlider
   _isRange: boolean = false;
   _isRtl: boolean = false;
 
+  _tickMarkTrackWidth: number = 0;
+
+  private _setTickMarkTrackWidth(): void {
+    if (!this._rect) {
+      return;
+    }
+    const step = this._step && this._step > 0 ? this._step : 1;
+    const maxValue = Math.floor(this.max / step) * step;
+    const percentage = (maxValue - this.min) / (this.max - this.min);
+    this._tickMarkTrackWidth = this._rect.width * percentage - 6;
+  }
+
   /** Cached dimensions of the host element. */
   private _cachedHostRect: DOMRect | null;
 
@@ -1103,6 +1126,7 @@ export class MatSlider
   ngAfterContentInit(): void {
     this._isRange = this._inputs.length === 2;
     this._rect = this._elementRef.nativeElement.getBoundingClientRect();
+    this._setTickMarkTrackWidth();
     (this._getInput(Thumb.END) as MatSliderRangeThumb).initProps();
     if (this._isRange) {
       (this._getInput(Thumb.START) as MatSliderRangeThumb).initProps();
@@ -1201,6 +1225,8 @@ export class MatSlider
           return;
         }
         this._rect = rect;
+        this._setTickMarkTrackWidth();
+        this._cdr.markForCheck();
         // todo: update ui.
 
         // clearTimeout(this._resizeTimer);
@@ -1224,7 +1250,56 @@ export class MatSlider
     return this._getThumb(Thumb.START)._isActive || this._getThumb(Thumb.END)._isActive;
   }
 
+  _updateNumTickMarks(): void {
+    if (this.step === undefined || this.min === undefined || this.max === undefined) {
+      return;
+    }
+    const step = this.step > 0 ? this.step : 1;
+    this._isRange ? this._updateNumTickMarksRange(step) : this._updateNumTickMarksNonRange(step);
+  }
+
+  private _updateNumTickMarksNonRange(step: number): void {
+    const value = this._getValue();
+    const numActive = Math.floor((value - this.min) / step) + 1;
+    const numInactive = Math.floor((this.max - value) / step);
+    this._tickMarks = Array.from({length: numActive})
+      .map(() => TickMark.ACTIVE)
+      .concat(Array.from({length: numInactive}).map(() => TickMark.INACTIVE));
+  }
+
+  private _updateNumTickMarksRange(step: number): void {
+    const endValue = this._getValue();
+    const startValue = this._getValue(Thumb.START);
+    const numInactiveBeforeStartThumb = Math.floor((startValue - this.min) / step);
+    const numActive = Math.floor((endValue - startValue) / step) + 1;
+    const numInactiveAfterEndThumb = Math.floor((this.max - endValue) / step);
+    console.log(
+      'inactive:',
+      numInactiveBeforeStartThumb,
+      'active:',
+      numActive,
+      'inactive:',
+      numInactiveAfterEndThumb,
+    );
+    this._tickMarks = Array.from({length: numInactiveBeforeStartThumb})
+      .map(() => TickMark.INACTIVE)
+      .concat(
+        Array.from({length: numActive}).map(() => TickMark.ACTIVE),
+        Array.from({length: numInactiveAfterEndThumb}).map(() => TickMark.INACTIVE),
+      );
+  }
+
+  private _getValue(thumbPosition: Thumb = Thumb.END): number {
+    const input = this._getInput(thumbPosition);
+    if (!input) {
+      return this.min;
+    }
+    return input.value;
+  }
+
   _updateValueIndicatorText(thumbPosition: Thumb, value: number): void {
+    // todo: move this out of here.
+    this._updateNumTickMarks();
     thumbPosition === Thumb.START
       ? (this.startValueIndicatorText = this.displayWith(value))
       : (this.endValueIndicatorText = this.displayWith(value));
