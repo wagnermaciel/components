@@ -208,7 +208,6 @@ export class MatSliderVisualThumb implements AfterViewInit, OnDestroy {
   };
 
   private _onDragStart = (): void => {
-    // todo: implement on drag start.
     (this as {_isActive: boolean})._isActive = true;
     this._showActiveRipple();
   };
@@ -397,6 +396,16 @@ export class MatSliderThumb implements OnInit, OnDestroy {
     return (this.value - this._slider.min) / (this._slider.max - this._slider.min);
   }
 
+  get fillPercentage(): number {
+    if (!this._slider._cachedHostRect) {
+      return this._slider._isRtl ? 1 : 0;
+    }
+    if (this.translateX === 0) {
+      return 0;
+    }
+    return this.translateX / this._slider._cachedHostRect.width;
+  }
+
   _isActive: boolean = false;
   _isFocused: boolean = false;
 
@@ -418,6 +427,7 @@ export class MatSliderThumb implements OnInit, OnDestroy {
     if (this._hasSetInitialValue) {
       if (!this._isActive || !this._isFocused) {
         this._hostElement.value = val;
+        this._slider._onValueChange(this);
         this._cdr.detectChanges();
       }
     } else {
@@ -504,20 +514,19 @@ export class MatSliderThumb implements OnInit, OnDestroy {
 
   _onInput(): void {
     this.valueChange.emit(this._hostElement.value);
-    this._slider._updateValueIndicatorText(this);
-    this._slider._updateTrackActiveStyles(this);
-    this._slider._updateTickMarks();
     // handles arrowing and updating the value when
     // a step is defined.
     if (this._slider.step || !this._isActive) {
       this._updateThumbUIByValue({withAnimation: true});
     }
+    this._slider._onValueChange(this);
   }
 
   _onNgControlValueChange(): void {
     // only used to handle when the value change
     // originates outside of the slider.
     if (!this._isActive || !this._isFocused) {
+      this._slider._onValueChange(this);
       this._updateThumbUIByValue();
     }
     this._slider.disabled = this._formControl!.disabled;
@@ -580,7 +589,7 @@ export class MatSliderThumb implements OnInit, OnDestroy {
 
   _updateThumbUI(options?: {withAnimation: boolean}) {
     this._slider._transition = options?.withAnimation ? 'transform 80ms' : 'transform 0ms';
-    this._slider._updateThumbStyles(this);
+    this._slider._onTranslateXChange(this);
     this._slider._cdr.markForCheck();
   }
 
@@ -867,13 +876,16 @@ export class MatSlider
   private _updateMin(min: number): void {
     const prevMin = this._min;
     this._min = min;
-
     this._isRange ? this._updateMinRange({old: prevMin, new: min}) : this._updateMinNonRange(min);
+    this._onMinMaxOrStepChange();
   }
 
   private _updateMinRange(min: {old: number; new: number}): void {
     const endInput = this._getInput(Thumb.END) as MatSliderRangeThumb;
     const startInput = this._getInput(Thumb.START) as MatSliderRangeThumb;
+
+    const oldEndValue = endInput.value;
+    const oldStartValue = startInput.value;
 
     startInput.min = min.new;
     endInput.min = Math.max(min.new, startInput.value);
@@ -883,16 +895,30 @@ export class MatSlider
     endInput._updateWidth();
 
     min.new < min.old
-      ? this._updateThumbUIsByValue(endInput, startInput)
-      : this._updateThumbUIsByValue(startInput, endInput);
+      ? this._onTranslateXChangeBySideEffect(endInput, startInput)
+      : this._onTranslateXChangeBySideEffect(startInput, endInput);
+
+    if (oldEndValue !== endInput.value) {
+      this._onValueChange(endInput);
+    }
+
+    if (oldStartValue !== startInput.value) {
+      this._onValueChange(startInput);
+    }
   }
 
   private _updateMinNonRange(min: number): void {
     const input = this._getInput(Thumb.END);
     if (input) {
+      const oldValue = input.value;
+
       input.min = min;
       input._updateThumbUIByValue();
-      this._updateTrackActiveStyles(input);
+      this._updateTrackUI(input);
+
+      if (oldValue !== input.value) {
+        this._onValueChange(input);
+      }
     }
   }
 
@@ -913,11 +939,15 @@ export class MatSlider
     const prevMax = this._max;
     this._max = max;
     this._isRange ? this._updateMaxRange({old: prevMax, new: max}) : this._updateMaxNonRange(max);
+    this._onMinMaxOrStepChange();
   }
 
   private _updateMaxRange(max: {old: number; new: number}): void {
     const endInput = this._getInput(Thumb.END) as MatSliderRangeThumb;
     const startInput = this._getInput(Thumb.START) as MatSliderRangeThumb;
+
+    const oldEndValue = endInput.value;
+    const oldStartValue = startInput.value;
 
     endInput.max = max.new;
     startInput.max = Math.min(max.new, endInput.value);
@@ -927,25 +957,31 @@ export class MatSlider
     startInput._updateWidth();
 
     max.new > max.old
-      ? this._updateThumbUIsByValue(startInput, endInput)
-      : this._updateThumbUIsByValue(endInput, startInput);
+      ? this._onTranslateXChangeBySideEffect(startInput, endInput)
+      : this._onTranslateXChangeBySideEffect(endInput, startInput);
 
-    this._updateFullUI();
+    if (oldEndValue !== endInput.value) {
+      this._onValueChange(endInput);
+    }
+
+    if (oldStartValue !== startInput.value) {
+      this._onValueChange(startInput);
+    }
   }
 
   private _updateMaxNonRange(max: number): void {
     const input = this._getInput(Thumb.END);
     if (input) {
+      const oldValue = input.value;
+
       input.max = max;
       input._updateThumbUIByValue();
-      this._updateTrackActiveStyles(input);
-    }
-  }
+      this._updateTrackUI(input);
 
-  // note: order matters here
-  _updateThumbUIsByValue(input1: MatSliderRangeThumb, input2: MatSliderRangeThumb): void {
-    input1._updateThumbUIByValue();
-    input2._updateThumbUIByValue();
+      if (oldValue !== input.value) {
+        this._onValueChange(input);
+      }
+    }
   }
 
   /** The values at which the thumb will snap. */
@@ -964,11 +1000,15 @@ export class MatSlider
   private _updateStep(step: number): void {
     this._step = step;
     this._isRange ? this._updateStepRange() : this._updateStepNonRange();
+    this._onMinMaxOrStepChange();
   }
 
   private _updateStepRange(): void {
     const endInput = this._getInput(Thumb.END) as MatSliderRangeThumb;
     const startInput = this._getInput(Thumb.START) as MatSliderRangeThumb;
+
+    const oldEndValue = endInput.value;
+    const oldStartValue = startInput.value;
 
     const prevStartValue = startInput.value;
 
@@ -985,23 +1025,29 @@ export class MatSlider
     endInput._updateWidth();
 
     endInput.value < prevStartValue
-      ? this._updateThumbUIsByValue(startInput, endInput)
-      : this._updateThumbUIsByValue(endInput, startInput);
+      ? this._onTranslateXChangeBySideEffect(startInput, endInput)
+      : this._onTranslateXChangeBySideEffect(endInput, startInput);
 
-    this._updateTickMarks();
-    this._cdr.markForCheck();
+    if (oldEndValue !== endInput.value) {
+      this._onValueChange(endInput);
+    }
+
+    if (oldStartValue !== startInput.value) {
+      this._onValueChange(startInput);
+    }
   }
 
   private _updateStepNonRange(): void {
     const input = this._getInput(Thumb.END);
     if (input) {
-      console.log('updating step');
+      const oldValue = input.value;
+
       input.step = this._step;
       input._updateThumbUIByValue();
-      this._updateTrackActiveStyles(input);
-      this._updateTickMarkTrackWidth();
-      this._updateTickMarks();
-      this._cdr.markForCheck();
+
+      if (oldValue !== input.value) {
+        this._onValueChange(input);
+      }
     }
   }
 
@@ -1024,7 +1070,8 @@ export class MatSlider
   /** Observer used to monitor size changes in the slider. */
   private _resizeObserver: ResizeObserver | null;
 
-  _rect: DOMRect | null;
+  /** Cached dimensions of the host element. */
+  _cachedHostRect: DOMRect | null;
 
   protected startValueIndicatorText: string = '';
   protected endValueIndicatorText: string = '';
@@ -1044,8 +1091,7 @@ export class MatSlider
 
   _tickMarkTrackWidth: number = 0;
 
-  /** Cached dimensions of the host element. */
-  private _cachedHostRect: DOMRect | null;
+  private _resizeTimer: number;
 
   constructor(
     readonly _ngZone: NgZone,
@@ -1073,6 +1119,7 @@ export class MatSlider
   ngAfterContentInit(): void {
     const eInput = this._getInput(Thumb.END);
     const sInput = this._getInput(Thumb.START);
+    this._isRange = !!eInput && !!sInput;
     if (eInput) {
       eInput.initProps();
       eInput.initUI();
@@ -1081,6 +1128,11 @@ export class MatSlider
       sInput.initProps();
       sInput.initUI();
     }
+    this._cachedHostRect = this._getHostDimensions();
+    this._updateTrackUI(eInput!);
+    this._updateTickMarkUI();
+    this._updateTickMarkTrackUI();
+    this._cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
@@ -1089,15 +1141,11 @@ export class MatSlider
     this._resizeObserver = null;
   }
 
-  /** Handles updating the slider foundation after a dir change. */
+  /** Handles updating the slider ui after a dir change. */
   private _onDirChange(): void {
     this._isRtl = this._dir.value === 'rtl';
-
-    if (!this._isRange) {
-      this._onDirChangeNonRange();
-    }
-
-    this._onDirChangeRange();
+    this._isRange ? this._onDirChangeRange() : this._onDirChangeNonRange();
+    this._updateTickMarkUI();
   }
 
   private _onDirChangeRange(): void {
@@ -1115,16 +1163,16 @@ export class MatSlider
 
     endInput._updateThumbUIByValue();
     startInput._updateThumbUIByValue();
-    this._updateTrackActiveStyles(endInput);
   }
 
   private _onDirChangeNonRange(): void {
-    this._updateUIOnDirChange();
+    const input = this._getInput(Thumb.END)!;
+    input._updateThumbUIByValue();
   }
 
   /** Gets the slider thumb input of the given thumb position. */
   _getInput(thumbPosition: Thumb): MatSliderThumb | MatSliderRangeThumb | undefined {
-    if (this._input) {
+    if (thumbPosition === Thumb.END && this._input) {
       return this._input;
     }
     if (this._inputs?.length) {
@@ -1155,10 +1203,6 @@ export class MatSlider
     this._trackActiveTransformOrigin = styles.transformOrigin;
   }
 
-  private _getSibling(thumbPosition: Thumb): MatSliderThumb | undefined {
-    return this._getInput(thumbPosition === Thumb.END ? Thumb.START : Thumb.END);
-  }
-
   // todo: this should just be a prop on matsliderrangethumb.
   private _isLeftThumb(input: MatSliderRangeThumb): boolean {
     return (input._isEndThumb && this._isRtl) || (!input._isEndThumb && !this._isRtl);
@@ -1171,32 +1215,32 @@ export class MatSlider
     }
 
     this._ngZone.runOutsideAngular(() => {
-      this._resizeObserver = new ResizeObserver(() => {
+      this._resizeObserver = new ResizeObserver(entries => {
         // Triggering a layout while the user is dragging can throw off the alignment.
         if (this._isActive()) {
           return;
         }
 
         const rect = this._elementRef.nativeElement.getBoundingClientRect();
-        if (this._rect?.width === rect.width) {
+        if (this._cachedHostRect?.width === rect.width) {
           return;
         }
-        this._rect = rect;
-        this._updateTickMarkTrackWidth();
-        this._cdr.markForCheck();
-        // todo: update ui.
+        this._cachedHostRect = rect;
 
-        // clearTimeout(this._resizeTimer);
+        if (this._resizeTimer) {
+          clearTimeout(this._resizeTimer);
+        }
+
         // this._resizeTimer = setTimeout(() => {
-        //   // The `layout` call is going to call `getBoundingClientRect` to update the dimensions
-        //   // of the host. Since the `ResizeObserver` already calculated them, we can save some
-        //   // work by returning them instead of having to check the DOM again.
-        //   if (!this._isActive()) {
-        //     this._cachedHostRect = entries[0]?.contentRect;
-        //     this._layout();
-        //     this._cachedHostRect = null;
-        //   }
-        // }, 50);
+        // The `layout` call is going to call `getBoundingClientRect` to update the dimensions
+        // of the host. Since the `ResizeObserver` already calculated them, we can save some
+        // work by returning them instead of having to check the DOM again.
+        if (!this._isActive()) {
+          this._cachedHostRect = entries[0]?.contentRect;
+          this._onResize();
+          this._cdr.detectChanges();
+        }
+        // }, 10);
       });
       this._resizeObserver.observe(this._elementRef.nativeElement);
     });
@@ -1215,64 +1259,56 @@ export class MatSlider
     return input.value;
   }
 
-  _updateFullUI(source?: MatSliderThumb): void {
-    const sInput = this._getInput(Thumb.START);
-    const eInput = this._getInput(Thumb.END);
-
-    if (sInput) {
-      this._updateThumbStyles(sInput);
-      this._updateValueIndicatorText(sInput);
-      if (source && source.thumbPosition === Thumb.START) {
-        this._updateTrackActiveStyles(sInput);
-      }
-    }
-    if (eInput) {
-      this._updateThumbStyles(eInput);
-      this._updateValueIndicatorText(eInput);
-      if (!source || source.thumbPosition === Thumb.END) {
-        this._updateTrackActiveStyles(eInput);
-      }
-    }
-    this._updateTickMarks();
-    this._updateTickMarkTrackWidth();
+  _onTranslateXChange(source: MatSliderThumb): void {
+    console.log('translateX');
+    this._updateThumbUI(source);
+    this._updateTrackUI(source);
+    this._cdr.detectChanges();
   }
 
-  _updateUIOnResize(): void {
-    const sInput = this._getInput(Thumb.START);
-    const eInput = this._getInput(Thumb.END);
-
-    if (sInput) {
-      this._updateThumbStyles(sInput);
-    }
-    if (eInput) {
-      this._updateThumbStyles(eInput);
-      this._updateTrackActiveStyles(eInput);
-    }
-    this._updateTickMarkTrackWidth();
+  // note: order matters here
+  _onTranslateXChangeBySideEffect(input1: MatSliderRangeThumb, input2: MatSliderRangeThumb): void {
+    console.log('translateX (side effect)');
+    input1._updateThumbUIByValue();
+    input2._updateThumbUIByValue();
   }
 
-  _updateUIOnDirChange(): void {
-    const sInput = this._getInput(Thumb.START);
-    const eInput = this._getInput(Thumb.END);
+  _onValueChange(source: MatSliderThumb): void {
+    console.log('value');
+    this._updateValueIndicatorUI(source);
+    this._updateTickMarkUI();
+    this._cdr.markForCheck();
+  }
 
-    if (sInput) {
-      this._updateThumbStyles(sInput);
-    }
-    if (eInput) {
-      this._updateThumbStyles(eInput);
-      this._updateTrackActiveStyles(eInput);
-    }
+  _onMinMaxOrStepChange(): void {
+    console.log('min, max, or step');
+    this._updateTickMarkUI();
+    this._updateTickMarkTrackUI();
+    this._cdr.markForCheck();
+  }
+
+  _onResize(): void {
+    console.log('resize');
+    const eInput = this._getInput(Thumb.END);
+    const sInput = this._getInput(Thumb.START);
+
+    eInput?._updateThumbUIByValue();
+    sInput?._updateThumbUIByValue();
+
+    this._updateTickMarkUI();
+    this._updateTickMarkTrackUI();
   }
 
   // Thumb styles update conditions
   //
-  // 1. Value, resize, or dir change
-  //    - Reason: The thumb translateX needs to be recalculated.
+  // 1. TranslateX, resize, or dir change
+  //    - Reason: The thumb styles need to be updated according to the new translateX.
   // 2. Min, max, or step
   //    - Reason: The value may have silently changed.
 
   /** Updates the translateX of the given thumb. */
-  _updateThumbStyles(source: MatSliderThumb) {
+  _updateThumbUI(source: MatSliderThumb) {
+    console.log('\tthumb');
     const transform = `translateX(${source.translateX}px)`;
     source.thumbPosition === Thumb.END
       ? (this._endThumbTransform = transform)
@@ -1286,12 +1322,12 @@ export class MatSlider
   // 2. Min, max, or step
   //    - Reason: The value may have silently changed.
 
-  _updateValueIndicatorText(source: MatSliderThumb): void {
+  _updateValueIndicatorUI(source: MatSliderThumb): void {
+    console.log('\tvalue indicator');
     if (this.discrete) {
       source.thumbPosition === Thumb.START
         ? (this.startValueIndicatorText = this.displayWith(source.value))
         : (this.endValueIndicatorText = this.displayWith(source.value));
-      this._cdr.markForCheck();
     }
   }
 
@@ -1305,58 +1341,54 @@ export class MatSlider
   // 2. Resize
   //    - Reason: The position for the maximum reachable value needs to be recalculated.
 
-  private _updateTickMarkTrackWidth(): void {
-    if (!this._rect) {
+  private _updateTickMarkTrackUI(): void {
+    console.log('\tTM track');
+    if (!this._cachedHostRect) {
       return;
     }
     const step = this._step && this._step > 0 ? this._step : 1;
     const maxValue = Math.floor(this.max / step) * step;
     const percentage = (maxValue - this.min) / (this.max - this.min);
-    this._tickMarkTrackWidth = this._rect.width * percentage - 6;
+    this._tickMarkTrackWidth = this._cachedHostRect.width * percentage - 6;
   }
 
   // Track active update conditions
   //
-  // 1. Value
+  // 1. TranslateX
   //    - Reason: The track active should line up with the new thumb position.
   // 2. Min or max
   //    - Reason #1: The 'active' percentage needs to be recalculated.
   //    - Reason #2: The value may have silently changed.
   // 3. Step
-  //    - Reason: The value may have silently changed.
+  //    - Reason: The value may have silently changed causing the thumb(s) to shift.
   // 4. Dir change
   //    - Reason: The track active will need to be updated according to the new thumb position(s).
   // 5. Resize
   //    - Reason: The total width the 'active' tracks translateX is based on has changed.
 
-  _updateTrackActiveStyles(source: MatSliderThumb): void {
+  _updateTrackUI(source: MatSliderThumb): void {
+    console.log('\ttrack');
     this._isRange
-      ? this._updateTrackActiveStylesRange(source as MatSliderRangeThumb)
-      : this._updateTrackActiveStylesNonRange(source as MatSliderThumb);
-    this._cdr.markForCheck();
+      ? this._updateTrackUIRange(source as MatSliderRangeThumb)
+      : this._updateTrackUINonRange(source as MatSliderThumb);
   }
 
-  private _updateTrackActiveStylesRange(source: MatSliderRangeThumb): void {
-    if (!source._sibling) {
+  private _updateTrackUIRange(source: MatSliderRangeThumb): void {
+    if (!source._sibling || !this._cachedHostRect) {
       return;
     }
 
-    const activeValues = source._isEndThumb
-      ? source.value - source._sibling.value
-      : source._sibling.value - source.value;
+    const activePercentage =
+      Math.abs(source._sibling.translateX - source.translateX) / this._cachedHostRect.width;
 
-    const activePercentage = activeValues === 0 ? 0 : activeValues / (this.max - this.min);
-
-    if (this._isLeftThumb(source) && this._rect) {
-      console.log('animating from the right');
+    if (this._isLeftThumb(source) && this._cachedHostRect) {
       this._setTrackActiveStyles({
         left: 'auto',
-        right: `${this._rect.width - source._sibling.translateX}px`,
+        right: `${this._cachedHostRect.width - source._sibling.translateX}px`,
         transformOrigin: 'right',
         transform: `scaleX(${activePercentage})`,
       });
     } else {
-      console.log('animating from the left');
       this._setTrackActiveStyles({
         left: `${source._sibling.translateX}px`,
         right: 'auto',
@@ -1366,14 +1398,20 @@ export class MatSlider
     }
   }
 
-  private _updateTrackActiveStylesNonRange(source: MatSliderThumb): void {
-    console.log('percentage:', source.percentage);
-    this._setTrackActiveStyles({
-      left: '0px',
-      right: 'auto',
-      transformOrigin: 'left',
-      transform: `scaleX(${source.percentage})`,
-    });
+  private _updateTrackUINonRange(source: MatSliderThumb): void {
+    this._isRtl
+      ? this._setTrackActiveStyles({
+          left: 'auto',
+          right: '0px',
+          transformOrigin: 'right',
+          transform: `scaleX(${1 - source.fillPercentage})`,
+        })
+      : this._setTrackActiveStyles({
+          left: '0px',
+          right: 'auto',
+          transformOrigin: 'left',
+          transform: `scaleX(${source.fillPercentage})`,
+        });
   }
 
   // Tick mark update conditions
@@ -1384,30 +1422,36 @@ export class MatSlider
   //    - Reason #1: the number of tick marks may have changed.
   //    - Reason #2: The value may have silently changed.
 
-  // todo: figure out dir changes for tick marks.
-  // do we need to reverse the array, or can we just compute translateX accordingly?
-
   /** Updates the dots along the slider track. */
-  _updateTickMarks(): void {
+  _updateTickMarkUI(): void {
+    console.log('\ttick mark');
     if (this.step === undefined || this.min === undefined || this.max === undefined) {
       return;
     }
     const step = this.step > 0 ? this.step : 1;
-    this._isRange ? this._updateTickMarksRange(step) : this._updateTickMarksNonRange(step);
+    this._isRange ? this._updateTickMarkUIRange(step) : this._updateTickMarkUINonRange(step);
+
+    // todo: fix for range slider on dir change.
+    if (this._isRtl) {
+      this._tickMarks.reverse();
+    }
+    this._cdr.markForCheck();
   }
 
   /** Updates tick marks for non range sliders. */
-  private _updateTickMarksNonRange(step: number): void {
+  private _updateTickMarkUINonRange(step: number): void {
     const value = this._getValue();
-    const numActive = Math.floor((value - this.min) / step) + 1;
-    const numInactive = Math.floor((this.max - value) / step);
+    let numActive = Math.floor((value - this.min) / step);
+    let numInactive = Math.floor((this.max - value) / step);
+    this._isRtl ? numActive++ : numInactive++;
+
     this._tickMarks = Array.from({length: numActive})
       .map(() => TickMark.ACTIVE)
       .concat(Array.from({length: numInactive}).map(() => TickMark.INACTIVE));
   }
 
   /** Updates tick marks for range sliders. */
-  private _updateTickMarksRange(step: number): void {
+  private _updateTickMarkUIRange(step: number): void {
     const endValue = this._getValue();
     const startValue = this._getValue(Thumb.START);
     const numInactiveBeforeStartThumb = Math.floor((startValue - this.min) / step);
@@ -1419,6 +1463,11 @@ export class MatSlider
         Array.from({length: numActive}).map(() => TickMark.ACTIVE),
         Array.from({length: numInactiveAfterEndThumb}).map(() => TickMark.INACTIVE),
       );
+    this._cdr.detectChanges();
+  }
+
+  _tickMarkTrackByFn(index: number, tickMark: TickMark): string {
+    return `${index}-${tickMark}`;
   }
 }
 

@@ -17,8 +17,8 @@
       [style.transition]="_transition"></div>
   </div>
   <div *ngIf="showTickMarks" class="mdc-slider__tick-marks" #tickMarkContainer>
-    <ng-container *ngIf="_rect">
-      <ng-container *ngFor="let tickMark of _tickMarks; let i = index">
+    <ng-container *ngIf="_cachedHostRect">
+      <ng-container *ngFor="let tickMark of _tickMarks; let i = index; trackBy: _tickMarkTrackByFn">
         <div [class]="tickMark === 0 ? 'mdc-slider__tick-mark--active' : 'mdc-slider__tick-mark--inactive'" [style.transform]="'translateX(' + (i * ((_tickMarkTrackWidth) / (_tickMarks.length - 1))) + 'px'"></div>
       </ng-container>
     </ng-container>
