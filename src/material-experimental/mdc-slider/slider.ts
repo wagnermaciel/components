@@ -533,6 +533,10 @@ export class MatSliderThumb implements OnInit, OnDestroy {
   }
 
   _onMouseDown(event: MouseEvent): void {
+    if (event.button !== 0) {
+      return;
+    }
+
     this._isActive = true;
     this._isFocused = true;
 
