@@ -15,7 +15,6 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 @Component({
   selector: 'mdc-slider-demo',
   templateUrl: 'mdc-slider-demo.html',
-  styles: ['.mat-mdc-slider { width: 300px; }'],
   standalone: true,
   imports: [
     FormsModule,

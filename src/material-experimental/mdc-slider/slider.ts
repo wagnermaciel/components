@@ -320,8 +320,9 @@ export class MatSliderVisualThumb implements AfterViewInit, OnDestroy {
   host: {
     'class': 'mdc-slider__input',
     'type': 'range',
+    '[style.padding]': '_paddingStyle',
+    '[style.width]': '_widthStyle',
     '[style.pointer-events]': '"auto"',
-    '[style.width]': '"calc(100% + 16px);"',
     '(change)': '_onChange()',
     '(input)': '_onInput()',
     '(mousedown)': '_onMouseDown($event)',
@@ -335,6 +336,22 @@ export class MatSliderVisualThumb implements AfterViewInit, OnDestroy {
 export class MatSliderThumb implements OnInit, OnDestroy {
   /** The host native HTML input element. */
   _hostElement: HTMLInputElement;
+
+  _knobRadius: number = 8;
+  _rippleRadius: number = 24;
+
+  get _offset(): number {
+    return this._padding + this._knobRadius;
+  }
+  get _padding(): number {
+    return this._rippleRadius - this._knobRadius;
+  }
+  get _paddingStyle(): string {
+    return `0 ${this._padding}px`;
+  }
+  get _widthStyle(): string {
+    return `calc(100% - ${this._padding * 2}px)`;
+  }
 
   get translateX(): number {
     if (this._slider.min >= this._slider.max) {
@@ -397,13 +414,13 @@ export class MatSliderThumb implements OnInit, OnDestroy {
   }
 
   get fillPercentage(): number {
-    if (!this._slider._cachedHostRect) {
+    if (!this._slider._cachedTrackWidth) {
       return this._slider._isRtl ? 1 : 0;
     }
     if (this.translateX === 0) {
       return 0;
     }
-    return this.translateX / this._slider._cachedHostRect.width;
+    return (this.translateX - this._rippleRadius) / this._slider._cachedTrackWidth;
   }
 
   _isActive: boolean = false;
@@ -560,16 +577,14 @@ export class MatSliderThumb implements OnInit, OnDestroy {
   }
 
   _clamp(v: number): number {
-    const rect = this._slider._elementRef.nativeElement.getBoundingClientRect();
-    return Math.max(Math.min(v, rect.width), 0);
+    return Math.max(Math.min(v, this._slider._cachedWidth - this._offset), this._offset);
   }
 
   _calcTranslateXByValue(): number {
-    const rect = this._slider._elementRef.nativeElement.getBoundingClientRect();
     if (this._slider._isRtl) {
-      return (1 - this.percentage) * rect.width;
+      return (1 - this.percentage) * this._slider._cachedTrackWidth + this._offset;
     }
-    return this.percentage * rect.width;
+    return this.percentage * this._slider._cachedTrackWidth + this._offset;
   }
 
   _calcTranslateXByMouseEvent(event: MouseEvent): number {
@@ -614,14 +629,12 @@ export class MatSliderThumb implements OnInit, OnDestroy {
     '[style.width]': '_styleWidth',
     '[style.left]': '_left',
     '[style.right]': '_right',
-    '[style.margin-left]': '_marginLeft',
-    '[style.margin-right]': '_marginRight',
     '[style.z-index]': '_zIndex',
   },
 })
 export class MatSliderRangeThumb extends MatSliderThumb {
   _zIndex: string = 'auto';
-  _styleWidth: string = 'calc(50% + 16px)'; // half the padding
+  _styleWidth: string = 'calc(100% - 32px)';
 
   _left: string;
   _right: string;
@@ -642,14 +655,14 @@ export class MatSliderRangeThumb extends MatSliderThumb {
     if (!this._isLeftThumb && this._sibling) {
       return this._sibling.translateX;
     }
-    return 0;
+    return this._offset;
   }
 
   get _maxPos(): number {
     if (this._isLeftThumb && this._sibling) {
       return this._sibling.translateX;
     }
-    return this._slider._elementRef.nativeElement.getBoundingClientRect().width;
+    return this._slider._cachedWidth - this._offset;
   }
 
   _isEndThumb: boolean;
@@ -729,20 +742,19 @@ export class MatSliderRangeThumb extends MatSliderThumb {
       return;
     }
     const percentage = (this.max - this.min) / (this._slider.max - this._slider.min);
-    this._styleWidth = `calc(${percentage * 100}% + 16px)`;
+    const minWidth = this._rippleRadius * 2 - this._padding * 2;
+    const maxWidth = this._slider._cachedWidth - this._padding * 2 - minWidth;
+    const width = maxWidth * percentage + minWidth;
+    this._styleWidth = `${width}px`;
   }
 
   _updateStaticStyles(): void {
     if (this._isLeftThumb) {
       this._left = '0';
       this._right = 'auto';
-      this._marginLeft = '-24px'; // todo: these are based on ripple and visual thumb radius.
-      this._marginRight = '0';
     } else {
       this._left = 'auto';
       this._right = '0';
-      this._marginLeft = '0';
-      this._marginRight = '-24px';
     }
   }
 
@@ -1075,7 +1087,9 @@ export class MatSlider
   private _resizeObserver: ResizeObserver | null;
 
   /** Cached dimensions of the host element. */
-  _cachedHostRect: DOMRect | null;
+  _cachedWidth: number;
+  _cachedTrackWidth: number;
+  _rippleRadius: number = 24;
 
   protected startValueIndicatorText: string = '';
   protected endValueIndicatorText: string = '';
@@ -1120,7 +1134,13 @@ export class MatSlider
     this._observeHostResize();
   }
 
+  private _setDimensions(): void {
+    this._cachedWidth = this._elementRef.nativeElement.getBoundingClientRect().width;
+    this._cachedTrackWidth = this._cachedWidth - this._rippleRadius * 2;
+  }
+
   ngAfterContentInit(): void {
+    this._setDimensions();
     const eInput = this._getInput(Thumb.END);
     const sInput = this._getInput(Thumb.START);
     this._isRange = !!eInput && !!sInput;
@@ -1132,7 +1152,6 @@ export class MatSlider
       sInput.initProps();
       sInput.initUI();
     }
-    this._cachedHostRect = this._getHostDimensions();
     this._updateTrackUI(eInput!);
     this._updateTickMarkUI();
     this._updateTickMarkTrackUI();
@@ -1190,11 +1209,6 @@ export class MatSlider
     return thumbPosition === Thumb.END ? this._thumbs?.last! : this._thumbs?.first!;
   }
 
-  /** Gets the dimensions of the host element. */
-  _getHostDimensions() {
-    return this._cachedHostRect || this._elementRef.nativeElement.getBoundingClientRect();
-  }
-
   _setTrackActiveStyles(styles: {
     left: string;
     right: string;
@@ -1225,26 +1239,23 @@ export class MatSlider
           return;
         }
 
-        const rect = this._elementRef.nativeElement.getBoundingClientRect();
-        if (this._cachedHostRect?.width === rect.width) {
-          return;
-        }
-        this._cachedHostRect = rect;
-
         if (this._resizeTimer) {
           clearTimeout(this._resizeTimer);
         }
 
-        // this._resizeTimer = setTimeout(() => {
+        if (!this._isActive()) {
+          if (entries[0]?.contentRect.width !== this._cachedTrackWidth) {
+            this._setDimensions();
+            this._onResize();
+            this._cdr.detectChanges();
+          }
+        }
+
         // The `layout` call is going to call `getBoundingClientRect` to update the dimensions
         // of the host. Since the `ResizeObserver` already calculated them, we can save some
         // work by returning them instead of having to check the DOM again.
-        if (!this._isActive()) {
-          this._cachedHostRect = entries[0]?.contentRect;
-          this._onResize();
-          this._cdr.detectChanges();
-        }
-        // }, 10);
+        //
+        // this._resizeTimer = setTimeout(() => { }, 10);
       });
       this._resizeObserver.observe(this._elementRef.nativeElement);
     });
@@ -1264,7 +1275,7 @@ export class MatSlider
   }
 
   _onTranslateXChange(source: MatSliderThumb): void {
-    console.log('translateX');
+    // console.log('translateX');
     this._updateThumbUI(source);
     this._updateTrackUI(source);
     this._cdr.detectChanges();
@@ -1272,32 +1283,35 @@ export class MatSlider
 
   // note: order matters here
   _onTranslateXChangeBySideEffect(input1: MatSliderRangeThumb, input2: MatSliderRangeThumb): void {
-    console.log('translateX (side effect)');
+    // console.log('translateX (side effect)');
     input1._updateThumbUIByValue();
     input2._updateThumbUIByValue();
   }
 
   _onValueChange(source: MatSliderThumb): void {
-    console.log('value');
+    // console.log('value');
     this._updateValueIndicatorUI(source);
     this._updateTickMarkUI();
     this._cdr.markForCheck();
   }
 
   _onMinMaxOrStepChange(): void {
-    console.log('min, max, or step');
+    // console.log('min, max, or step');
     this._updateTickMarkUI();
     this._updateTickMarkTrackUI();
     this._cdr.markForCheck();
   }
 
   _onResize(): void {
-    console.log('resize');
+    // console.log('resize');
     const eInput = this._getInput(Thumb.END);
     const sInput = this._getInput(Thumb.START);
 
     eInput?._updateThumbUIByValue();
     sInput?._updateThumbUIByValue();
+
+    eInput?._updateHiddenUI();
+    sInput?._updateHiddenUI();
 
     this._updateTickMarkUI();
     this._updateTickMarkTrackUI();
@@ -1312,7 +1326,7 @@ export class MatSlider
 
   /** Updates the translateX of the given thumb. */
   _updateThumbUI(source: MatSliderThumb) {
-    console.log('\tthumb');
+    // console.log('\tthumb');
     const transform = `translateX(${source.translateX}px)`;
     source.thumbPosition === Thumb.END
       ? (this._endThumbTransform = transform)
@@ -1327,7 +1341,7 @@ export class MatSlider
   //    - Reason: The value may have silently changed.
 
   _updateValueIndicatorUI(source: MatSliderThumb): void {
-    console.log('\tvalue indicator');
+    // console.log('\tvalue indicator');
     if (this.discrete) {
       source.thumbPosition === Thumb.START
         ? (this.startValueIndicatorText = this.displayWith(source.value))
@@ -1346,14 +1360,11 @@ export class MatSlider
   //    - Reason: The position for the maximum reachable value needs to be recalculated.
 
   private _updateTickMarkTrackUI(): void {
-    console.log('\tTM track');
-    if (!this._cachedHostRect) {
-      return;
-    }
+    // console.log('\tTM track');
     const step = this._step && this._step > 0 ? this._step : 1;
     const maxValue = Math.floor(this.max / step) * step;
     const percentage = (maxValue - this.min) / (this.max - this.min);
-    this._tickMarkTrackWidth = this._cachedHostRect.width * percentage - 6;
+    this._tickMarkTrackWidth = this._cachedTrackWidth * percentage - 6;
   }
 
   // Track active update conditions
@@ -1370,31 +1381,35 @@ export class MatSlider
   // 5. Resize
   //    - Reason: The total width the 'active' tracks translateX is based on has changed.
 
+  _trackLeft: number = 24;
+  _trackLeftStyle: string = '24px';
+  _trackWidthStyle: string = 'calc(100% - 48px)';
+
   _updateTrackUI(source: MatSliderThumb): void {
-    console.log('\ttrack');
+    // console.log('\ttrack');
     this._isRange
       ? this._updateTrackUIRange(source as MatSliderRangeThumb)
       : this._updateTrackUINonRange(source as MatSliderThumb);
   }
 
   private _updateTrackUIRange(source: MatSliderRangeThumb): void {
-    if (!source._sibling || !this._cachedHostRect) {
+    if (!source._sibling || !this._cachedTrackWidth) {
       return;
     }
 
     const activePercentage =
-      Math.abs(source._sibling.translateX - source.translateX) / this._cachedHostRect.width;
+      Math.abs(source._sibling.translateX - source.translateX) / this._cachedTrackWidth;
 
-    if (this._isLeftThumb(source) && this._cachedHostRect) {
+    if (this._isLeftThumb(source) && this._cachedTrackWidth) {
       this._setTrackActiveStyles({
         left: 'auto',
-        right: `${this._cachedHostRect.width - source._sibling.translateX}px`,
+        right: `${this._cachedWidth - source._sibling.translateX - this._rippleRadius}px`,
         transformOrigin: 'right',
         transform: `scaleX(${activePercentage})`,
       });
     } else {
       this._setTrackActiveStyles({
-        left: `${source._sibling.translateX}px`,
+        left: `${source._sibling.translateX - this._rippleRadius}px`,
         right: 'auto',
         transformOrigin: 'left',
         transform: `scaleX(${activePercentage})`,
@@ -1428,7 +1443,7 @@ export class MatSlider
 
   /** Updates the dots along the slider track. */
   _updateTickMarkUI(): void {
-    console.log('\ttick mark');
+    // console.log('\ttick mark');
     if (this.step === undefined || this.min === undefined || this.max === undefined) {
       return;
     }

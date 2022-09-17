@@ -17,33 +17,19 @@ $mat-slider-horizontal-margin: 8px !default;
   box-sizing: border-box;
   outline: none;
   vertical-align: middle;
-  margin: {
-    left: $mat-slider-horizontal-margin;
-    right: $mat-slider-horizontal-margin;
-  }
+  margin: 0;
 
   input {
-    // Clicking even the ripple of the slider thumb should focus the input.
-    // These styles moves the slider to provide some focusable track at the
-    // start and end of the slider. Note that the slider thumb cannot move
-    // into this padding, which is exactly what we want since clicking the
-    // edge of the slider ripple is outside of the visual slider track and
-    // should not change the slider thumbs value/position.
-    padding: 0 16px;
-    width: calc(100% + 16px);
-    margin-left: -24px;
-
     // opacity: 1;
+  }
+
+  .mdc-slider__track {
+    pointer-events: none;
   }
 
   .mat-mdc-slider-visual-thumb {
     // opacity: 0.5
   }
-
-  // Unset the default "width" property from the MDC slider class. We don't want
-  // the slider to automatically expand horizontally for backwards compatibility.
-  width: auto;
-  min-width: $mat-slider-min-size - (2 * $mat-slider-horizontal-margin);
 
   &._mat-animation-noopable {
     &.mdc-slider--discrete .mdc-slider__thumb,
