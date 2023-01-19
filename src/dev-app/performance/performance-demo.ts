@@ -20,6 +20,7 @@ import {MatSelectModule} from '@angular/material/select';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 
 import {take} from 'rxjs/operators';
+import {MatExpansionModule} from '@angular/material/expansion';
 
 @Component({
   selector: 'performance-demo',
@@ -31,6 +32,7 @@ import {take} from 'rxjs/operators';
     FormsModule,
     MatButtonModule,
     MatDividerModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -44,10 +46,10 @@ export class PerformanceDemo implements AfterViewInit {
   show = false;
 
   /** The number of times metrics will be gathered. */
-  sampleSize = 100;
+  sampleSize = 1;
 
   /** The number of components being rendered. */
-  componentCount = 100;
+  componentCount = 1;
 
   /** A flat array of every sample recorded. */
   allSamples: number[] = [];
@@ -66,6 +68,8 @@ export class PerformanceDemo implements AfterViewInit {
 
   /** Used in an ngFor to render the desired number of comonents. */
   componentArray = [].constructor(this.componentCount);
+
+  options = Array.from({length: 1000}).map((_, i) => ({text: `Option ${i}`, value: i}));
 
   /** The standard deviation of the recorded samples. */
   get stdev(): number | undefined {
