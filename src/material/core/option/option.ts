@@ -8,7 +8,7 @@
 
 import {FocusableOption, FocusOrigin} from '@angular/cdk/a11y';
 import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
-import {ENTER, hasModifierKey, SPACE} from '@angular/cdk/keycodes';
+import {ENTER, hasModifierKey, P, SPACE} from '@angular/cdk/keycodes';
 import {
   Component,
   ViewEncapsulation,
@@ -25,10 +25,16 @@ import {
   EventEmitter,
   QueryList,
   ViewChild,
+  TemplateRef,
+  ViewContainerRef,
+  NgZone,
+  Injectable,
 } from '@angular/core';
-import {Subject} from 'rxjs';
+import {Observable, Subject, Subscription, fromEvent, observable} from 'rxjs';
 import {MatOptgroup, MAT_OPTGROUP, _MatOptgroupBase} from './optgroup';
 import {MatOptionParentComponent, MAT_OPTION_PARENT_COMPONENT} from './option-parent';
+import {finalize, share, takeUntil} from 'rxjs/operators';
+import {DOCUMENT} from '@angular/common';
 
 /**
  * Option IDs need to be unique across components, so this counter exists outside of
@@ -281,6 +287,178 @@ export class MatOption<T = any> extends _MatOptionBase<T> {
     @Optional() @Inject(MAT_OPTGROUP) group: MatOptgroup,
   ) {
     super(element, changeDetectorRef, parent, group);
+  }
+}
+
+// @Directive({selector: '[lazy]'})
+// export class MatLazyOption {
+//   @Input()
+//   set lazy(value: boolean) {
+//     if (!value && !this._rendered.closed) {
+//       this._render();
+//     }
+//   }
+
+//   private readonly _rendered = new Subject<void>();
+
+//   constructor(
+//     private _ngZone: NgZone,
+//     private templateRef: TemplateRef<any>,
+//     private viewContainer: ViewContainerRef,
+//     @Optional() @Inject(MAT_OPTION_PARENT_COMPONENT) private parent: MatOptionParentComponent,
+//   ) {
+//     this.listen();
+//   }
+
+//   ngOnDestroy() {
+//     this._ngZone.runOutsideAngular(() => {
+//       this._rendered.next();
+//       this._rendered.complete();
+//     });
+//   }
+
+//   private listen(): void {
+//     this._ngZone.runOutsideAngular(() => {
+//       this.parent.openedChange.pipe(takeUntil(this._rendered)).subscribe(open => {
+//         if (open) {
+//           this._render();
+//         }
+//       });
+//     });
+//   }
+
+//   private _render(): void {
+//     if (!this._rendered.closed) {
+//       this.viewContainer.createEmbeddedView(this.templateRef);
+//       this._ngZone.runOutsideAngular(() => {
+//         this._rendered.next();
+//         this._rendered.complete();
+//       });
+//     }
+//   }
+// }
+
+@Directive({selector: '[lazy]'})
+export class MatLazyOption {
+  @Input('lazyTrigger') trigger: HTMLElement;
+
+  @Input()
+  set lazy(isLazy: boolean) {
+    this._lazy = isLazy;
+    if (!isLazy) {
+      this._render();
+    }
+  }
+  get lazy(): boolean {
+    return this._lazy;
+  }
+  private _lazy = true;
+
+  private _focusSubscription?: Subscription;
+  private _mouseoverSubscription?: Subscription;
+
+  constructor(
+    private _ngZone: NgZone,
+    private templateRef: TemplateRef<any>,
+    private viewContainer: ViewContainerRef,
+    private listener: GlobalListener,
+  ) {}
+
+  ngAfterViewInit() {
+    if (this.lazy) {
+      this.listen();
+    }
+  }
+
+  ngOnDestroy() {
+    this._ngZone.runOutsideAngular(() => {
+      this._focusSubscription?.unsubscribe();
+      this._mouseoverSubscription?.unsubscribe();
+    });
+  }
+
+  private listen(): void {
+    this._ngZone.runOutsideAngular(() => {
+      this._focusSubscription = this.listener.listen('focus', this.trigger, () => {
+        this._render();
+      });
+      this._mouseoverSubscription = this.listener.listen('mouseover', this.trigger, () => {
+        this._render();
+      });
+    });
+  }
+
+  private _render(): void {
+    if (!this._focusSubscription?.closed) {
+      console.log('render!');
+      this.viewContainer.createEmbeddedView(this.templateRef);
+      this._ngZone.runOutsideAngular(() => {
+        this._focusSubscription?.unsubscribe();
+        this._mouseoverSubscription?.unsubscribe();
+      });
+    }
+  }
+}
+
+/**
+ * Provides a global listener for all events that occur on the document.
+ */
+@Injectable({providedIn: 'root'})
+export class GlobalListener implements OnDestroy {
+  private _elementToTypeToObservable = new Map<
+    HTMLElement | Document,
+    Map<keyof DocumentEventMap, Observable<Event>>
+  >();
+
+  /** The notifier that triggers the global event observables to stop emitting and complete. */
+  private _destroyed = new Subject();
+
+  constructor(private _ngZone: NgZone) {}
+
+  ngOnDestroy() {
+    this._destroyed.next();
+    this._destroyed.complete();
+    this._elementToTypeToObservable.clear();
+  }
+
+  /**
+   * Appends an event listener for events whose type attribute value is type.
+   * The callback argument sets the callback that will be invoked when the event is dispatched.
+   */
+  listen(
+    type: keyof DocumentEventMap,
+    element: HTMLElement | Document,
+    listener: (ev: Event) => any,
+  ): Subscription {
+    // This is the first listener on this element. Instantiate the type-to-observable map.
+    if (!this._elementToTypeToObservable.has(element)) {
+      this._elementToTypeToObservable.set(element, new Map());
+    }
+
+    // This is the first listener of this type for this element. Instantiate the observable.
+    if (!this._elementToTypeToObservable.get(element)!.get(type)) {
+      const typeToObservable = this._elementToTypeToObservable.get(element)!;
+      typeToObservable.set(type, this._createGlobalEventObservable(element, type));
+    }
+
+    return this._ngZone.runOutsideAngular(() =>
+      this._elementToTypeToObservable
+        .get(element)!
+        .get(type)!
+        .subscribe((event: Event) => listener(event)),
+    );
+  }
+
+  /** Creates an observable that emits all events of the given type. */
+  private _createGlobalEventObservable(
+    element: HTMLElement | Document,
+    type: keyof DocumentEventMap,
+  ) {
+    return fromEvent(element, type, {passive: true, capture: true}).pipe(
+      takeUntil(this._destroyed),
+      finalize(() => this._elementToTypeToObservable.get(element)?.delete(type)),
+      share(),
+    );
   }
 }
 

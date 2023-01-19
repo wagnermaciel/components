@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {InjectionToken} from '@angular/core';
+import {EventEmitter, InjectionToken} from '@angular/core';
 
 /**
  * Describes a parent component that manages a list of options.
@@ -17,6 +17,8 @@ export interface MatOptionParentComponent {
   disableRipple?: boolean;
   multiple?: boolean;
   inertGroups?: boolean;
+  valueChange: EventEmitter<any>;
+  openedChange: EventEmitter<boolean>;
 }
 
 /**
