@@ -25,6 +25,8 @@
       <mat-option [value]="10">10</mat-option>
       <mat-option [value]="100">100</mat-option>
       <mat-option [value]="1000">1000</mat-option>
+      <mat-option [value]="10000">10000</mat-option>
+      <mat-option [value]="100000">100000</mat-option>
     </mat-select>
   </mat-form-field>
 </div>
@@ -82,9 +84,6 @@
 
 <ng-container *ngIf="show">
   <ng-container *ngFor="let _ of componentArray">
-    <mat-form-field>
-      <mat-label>Input</mat-label>
-      <input matInput />
-    </mat-form-field>
+    <button mat-button>Button</button>
   </ng-container>
 </ng-container>

@@ -44,10 +44,10 @@ export class PerformanceDemo implements AfterViewInit {
   show = false;
 
   /** The number of times metrics will be gathered. */
-  sampleSize = 100;
+  sampleSize = 10;
 
   /** The number of components being rendered. */
-  componentCount = 100;
+  componentCount = 10000;
 
   /** A flat array of every sample recorded. */
   allSamples: number[] = [];
