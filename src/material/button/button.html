@@ -1,4 +1,5 @@
 <span
+    *ngIf="hasInteracted"
     class="mat-mdc-button-persistent-ripple"
     [class.mdc-button__ripple]="!_isFab"
     [class.mdc-fab__ripple]="_isFab"></span>
@@ -15,9 +16,9 @@
   The indicator can't be directly on the button, because MDC uses ::before for high contrast
   indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
 -->
-<span class="mat-mdc-focus-indicator"></span>
+<span *ngIf="hasInteracted" class="mat-mdc-focus-indicator"></span>
 
-<span matRipple class="mat-mdc-button-ripple"
+<span *ngIf="hasInteracted" matRipple class="mat-mdc-button-ripple"
      [matRippleDisabled]="_isRippleDisabled()"
      [matRippleTrigger]="_elementRef.nativeElement"></span>
 

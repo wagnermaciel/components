@@ -10,6 +10,7 @@ import {FocusMonitor, FocusOrigin} from '@angular/cdk/a11y';
 import {Platform} from '@angular/cdk/platform';
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Directive,
   ElementRef,
   inject,
@@ -102,8 +103,11 @@ export class MatButtonBase
   /** Reference to the MatRipple instance of the button. */
   @ViewChild(MatRipple) ripple: MatRipple;
 
+  protected hasInteracted = false;
+
   constructor(
-    elementRef: ElementRef,
+    private elementRef: ElementRef,
+    private cdr: ChangeDetectorRef,
     public _platform: Platform,
     public _ngZone: NgZone,
     public _animationMode?: string,
@@ -121,7 +125,21 @@ export class MatButtonBase
         });
       }
     }
+
+    this._ngZone.runOutsideAngular(() => {
+      elementRef.nativeElement.addEventListener('focus', this.render);
+      elementRef.nativeElement.addEventListener('mouseenter', this.render);
+    });
   }
+
+  render = () => {
+    this.hasInteracted = true;
+    this.cdr.detectChanges();
+    this._ngZone.runOutsideAngular(() => {
+      this.elementRef.nativeElement.removeEventListener('focus', this.render);
+      this.elementRef.nativeElement.removeEventListener('mouseenter', this.render);
+    });
+  };
 
   ngAfterViewInit() {
     this._focusMonitor.monitor(this._elementRef, true);
@@ -129,6 +147,10 @@ export class MatButtonBase
 
   ngOnDestroy() {
     this._focusMonitor.stopMonitoring(this._elementRef);
+    this._ngZone.runOutsideAngular(() => {
+      this.elementRef.nativeElement.removeEventListener('focus', this.render);
+      this.elementRef.nativeElement.removeEventListener('mouseenter', this.render);
+    });
   }
 
   /** Focuses the button. */
@@ -179,8 +201,14 @@ export const MAT_ANCHOR_HOST = {
 export class MatAnchorBase extends MatButtonBase implements OnInit, OnDestroy {
   tabIndex: number;
 
-  constructor(elementRef: ElementRef, platform: Platform, ngZone: NgZone, animationMode?: string) {
-    super(elementRef, platform, ngZone, animationMode);
+  constructor(
+    elementRef: ElementRef,
+    cdr: ChangeDetectorRef,
+    platform: Platform,
+    ngZone: NgZone,
+    animationMode?: string,
+  ) {
+    super(elementRef, cdr, platform, ngZone, animationMode);
   }
 
   ngOnInit(): void {

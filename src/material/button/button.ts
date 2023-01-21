@@ -9,6 +9,7 @@
 import {Platform} from '@angular/cdk/platform';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   Inject,
@@ -52,11 +53,12 @@ import {
 export class MatButton extends MatButtonBase {
   constructor(
     elementRef: ElementRef,
+    cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
   ) {
-    super(elementRef, platform, ngZone, animationMode);
+    super(elementRef, cdr, platform, ngZone, animationMode);
   }
 }
 
@@ -83,10 +85,11 @@ export class MatButton extends MatButtonBase {
 export class MatAnchor extends MatAnchorBase {
   constructor(
     elementRef: ElementRef,
+    cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
   ) {
-    super(elementRef, platform, ngZone, animationMode);
+    super(elementRef, cdr, platform, ngZone, animationMode);
   }
 }
