@@ -30,6 +30,7 @@ import {
 } from './button-base';
 import {ThemePalette} from '@angular/material/core';
 import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
+import {MatButtonInitialInteractionListener} from './button-interaction-detector';
 
 /** Default FAB options that can be overridden. */
 export interface MatFabDefaultOptions {
@@ -92,13 +93,14 @@ export class MatFabButton extends MatButtonBase {
 
   constructor(
     elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
     cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
     @Optional() @Inject(MAT_FAB_DEFAULT_OPTIONS) private _options?: MatFabDefaultOptions,
   ) {
-    super(elementRef, cdr, platform, ngZone, animationMode);
+    super(elementRef, iiListener, cdr, platform, ngZone, animationMode);
     this._options = this._options || defaults;
     this.color = this.defaultColor = this._options!.color || defaults.color;
   }
@@ -124,13 +126,14 @@ export class MatMiniFabButton extends MatButtonBase {
 
   constructor(
     elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
     cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
     @Optional() @Inject(MAT_FAB_DEFAULT_OPTIONS) private _options?: MatFabDefaultOptions,
   ) {
-    super(elementRef, cdr, platform, ngZone, animationMode);
+    super(elementRef, iiListener, cdr, platform, ngZone, animationMode);
     this._options = this._options || defaults;
     this.color = this.defaultColor = this._options!.color || defaults.color;
   }
@@ -170,13 +173,14 @@ export class MatFabAnchor extends MatAnchor {
 
   constructor(
     elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
     cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
     @Optional() @Inject(MAT_FAB_DEFAULT_OPTIONS) private _options?: MatFabDefaultOptions,
   ) {
-    super(elementRef, cdr, platform, ngZone, animationMode);
+    super(elementRef, iiListener, cdr, platform, ngZone, animationMode);
     this._options = this._options || defaults;
     this.color = this.defaultColor = this._options!.color || defaults.color;
   }
@@ -202,13 +206,14 @@ export class MatMiniFabAnchor extends MatAnchor {
 
   constructor(
     elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
     cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
     @Optional() @Inject(MAT_FAB_DEFAULT_OPTIONS) private _options?: MatFabDefaultOptions,
   ) {
-    super(elementRef, cdr, platform, ngZone, animationMode);
+    super(elementRef, iiListener, cdr, platform, ngZone, animationMode);
     this._options = this._options || defaults;
     this.color = this.defaultColor = this._options!.color || defaults.color;
   }

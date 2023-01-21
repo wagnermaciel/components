@@ -28,6 +28,7 @@ import {
   mixinDisabled,
   mixinDisableRipple,
 } from '@angular/material/core';
+import {MatButtonInitialInteractionListener} from './button-interaction-detector';
 
 /** Inputs common to all buttons. */
 export const MAT_BUTTON_INPUTS = ['disabled', 'disableRipple', 'color'];
@@ -106,8 +107,9 @@ export class MatButtonBase
   protected hasInteracted = false;
 
   constructor(
-    private elementRef: ElementRef,
-    private cdr: ChangeDetectorRef,
+    elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
+    cdr: ChangeDetectorRef,
     public _platform: Platform,
     public _ngZone: NgZone,
     public _animationMode?: string,
@@ -126,20 +128,11 @@ export class MatButtonBase
       }
     }
 
-    this._ngZone.runOutsideAngular(() => {
-      elementRef.nativeElement.addEventListener('focus', this.render);
-      elementRef.nativeElement.addEventListener('mouseenter', this.render);
+    iiListener.listen(elementRef.nativeElement, () => {
+      this.hasInteracted = true;
+      cdr.detectChanges();
     });
   }
-
-  render = () => {
-    this.hasInteracted = true;
-    this.cdr.detectChanges();
-    this._ngZone.runOutsideAngular(() => {
-      this.elementRef.nativeElement.removeEventListener('focus', this.render);
-      this.elementRef.nativeElement.removeEventListener('mouseenter', this.render);
-    });
-  };
 
   ngAfterViewInit() {
     this._focusMonitor.monitor(this._elementRef, true);
@@ -147,10 +140,6 @@ export class MatButtonBase
 
   ngOnDestroy() {
     this._focusMonitor.stopMonitoring(this._elementRef);
-    this._ngZone.runOutsideAngular(() => {
-      this.elementRef.nativeElement.removeEventListener('focus', this.render);
-      this.elementRef.nativeElement.removeEventListener('mouseenter', this.render);
-    });
   }
 
   /** Focuses the button. */
@@ -203,12 +192,13 @@ export class MatAnchorBase extends MatButtonBase implements OnInit, OnDestroy {
 
   constructor(
     elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
     cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     animationMode?: string,
   ) {
-    super(elementRef, cdr, platform, ngZone, animationMode);
+    super(elementRef, iiListener, cdr, platform, ngZone, animationMode);
   }
 
   ngOnInit(): void {

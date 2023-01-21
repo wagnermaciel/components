@@ -27,6 +27,7 @@ import {
   MatAnchorBase,
   MatButtonBase,
 } from './button-base';
+import {MatButtonInitialInteractionListener} from './button-interaction-detector';
 
 /**
  * Material Design icon button component. This type of button displays a single interactive icon for
@@ -46,12 +47,13 @@ import {
 export class MatIconButton extends MatButtonBase {
   constructor(
     elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
     cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
   ) {
-    super(elementRef, cdr, platform, ngZone, animationMode);
+    super(elementRef, iiListener, cdr, platform, ngZone, animationMode);
   }
 }
 
@@ -73,11 +75,12 @@ export class MatIconButton extends MatButtonBase {
 export class MatIconAnchor extends MatAnchorBase {
   constructor(
     elementRef: ElementRef,
+    iiListener: MatButtonInitialInteractionListener,
     cdr: ChangeDetectorRef,
     platform: Platform,
     ngZone: NgZone,
     @Optional() @Inject(ANIMATION_MODULE_TYPE) animationMode?: string,
   ) {
-    super(elementRef, cdr, platform, ngZone, animationMode);
+    super(elementRef, iiListener, cdr, platform, ngZone, animationMode);
   }
 }
