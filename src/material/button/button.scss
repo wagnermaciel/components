@@ -68,6 +68,12 @@
 }
 
 .mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button {
+  @include button-base.mat-private-button-ripple();
+}
+
+.mat-mdc-button,
 .mat-mdc-unelevated-button,
 .mat-mdc-raised-button,
 .mat-mdc-outlined-button {

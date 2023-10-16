@@ -4,6 +4,16 @@
 @use '../core/style/layout-common';
 @use '../core/mdc-helpers/mdc-helpers';
 
+@mixin mat-private-button-ripple() {
+    .mat-mdc-button-persistent-ripple::before {
+      background-color: var(--mat-mdc-button-persistent-ripple-color);
+    }
+  
+    .mat-ripple-element {
+      background-color: var(--mat-mdc-button-ripple-color);
+    }
+}
+
 // Adds styles necessary to provide stateful interactions with the button. This includes providing
 // content for the state container's ::before and ::after so that they can be given a background
 // color and opacity for states like hover, active, and focus. Additionally, adds styles to the
@@ -40,11 +50,6 @@
   .mat-mdc-button-persistent-ripple::before {
     content: '';
     opacity: 0;
-    background-color: var(--mat-mdc-button-persistent-ripple-color);
-  }
-
-  .mat-ripple-element {
-    background-color: var(--mat-mdc-button-ripple-color);
   }
 
   // The content should appear over the state and ripple layers, otherwise they may adversely affect

@@ -77,10 +77,6 @@
     .mat-mdc-button, .mat-mdc-outlined-button {
       @include button-theme-private.ripple-theme-styles($theme, false);
     }
-
-    .mat-mdc-raised-button, .mat-mdc-unelevated-button {
-      @include button-theme-private.ripple-theme-styles($theme, true);
-    }
   }
 
   $surface: inspection.get-theme-color($theme, background, card);
