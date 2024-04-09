@@ -1,3 +1,5 @@
+@use 'sass:map';
+@use 'sass:meta';
 @use '@angular/material' as mat;
 @use '@angular/material-experimental' as matx;
 
@@ -6,6 +8,14 @@
 // Disable legacy API compatibility, since dev-app is fully migrated to theme inspection API.
 mat.$theme-legacy-inspection-api-compatibility: false;
 
+@function my-color-transform($ref, $sys-color) {
+  @return $sys-color;
+}
+
+@function my-typography-transform($ref, $sys-typography) {
+  @return $sys-typography;
+}
+
 // Create a theme with the specified color type and density.
 @function create-theme($type: light, $density: 0) {
   @return matx.define-theme((
@@ -13,7 +23,9 @@ mat.$theme-legacy-inspection-api-compatibility: false;
       theme-type: $type,
       primary: matx.$m3-azure-palette,
       tertiary: matx.$m3-blue-palette,
+      transform: meta.get-function("my-color-transform"),
     ),
+    typography: (transform: meta.get-function("my-typography-transform")),
     density: (
       scale: $density
     ),

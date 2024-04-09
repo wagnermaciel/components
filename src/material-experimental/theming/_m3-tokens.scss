@@ -162,13 +162,12 @@
     $color: map.get($tokens, $color-key);
     $opacity: map.get($opacity-lookup, $opacity-key);
 
-    @if meta.type-of($color) == 'color' {
-      @if meta.type-of($opacity) != 'number' {
-        @error 'Cannot find valid opacity value for color token "#{$color-key}"';
-      }
-
+    @if(meta.type-of($color) == 'color') {
       $result: map.remove($result, $opacity-key);
       $result: map.set($result, $color-key, rgba($color, $opacity));
+    } @else if($color != null) {
+      $result: map.remove($result, $opacity-key);
+      $result: map.set($result, $color-key, #{color(from #{$color} srgb r g b / #{$opacity})});
     }
   }
 
@@ -987,13 +986,19 @@
 /// @param {Map} $tertiary The tertiary palette
 /// @param {Map} $error The error palette
 /// @return {Map} A map of namespaced color tokens
-@function generate-color-tokens($type, $primary, $tertiary, $error) {
+@function generate-color-tokens($type, $primary, $tertiary, $error, $transform) {
   $ref: (
     md-ref-palette: _generate-ref-palette-tokens($primary, $tertiary, $error)
   );
+
   $sys-color: if($type == dark,
     mdc-tokens.md-sys-color-values-dark($ref),
     mdc-tokens.md-sys-color-values-light($ref));
+
+  @if($transform != null) {
+    $sys-color: meta.call($transform, $ref, $sys-color);
+  }
+
   @return _generate-tokens(map.merge($ref, (
     md-sys-color: $sys-color,
     // Because the elevation values are always combined with color values to create the box shadow,
@@ -1014,12 +1019,18 @@
 /// @param {String|Number} $medium The medium font-weight
 /// @param {String|Number} $regular The regular font-weight
 /// @return {Map} A map of namespaced typography tokens
-@function generate-typography-tokens($brand, $plain, $bold, $medium, $regular) {
+@function generate-typography-tokens($brand, $plain, $bold, $medium, $regular, $transform) {
   $ref: (
     md-ref-typeface: _generate-ref-typeface-tokens($brand, $plain, $bold, $medium, $regular)
   );
+  $sys-typeface: mdc-tokens.md-sys-typescale-values($ref);
+
+  @if($transform != null) {
+    $sys-typeface: meta.call($transform, $ref, $sys-typeface);
+  }
+
   @return _generate-tokens((
-    md-sys-typescale: mdc-tokens.md-sys-typescale-values($ref)
+    md-sys-typescale: $sys-typeface
   ));
 }
 
