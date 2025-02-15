@@ -12,7 +12,7 @@ import {ListSelectionItem, ListSelection} from './list-selection';
 export class ListSelectionController<T extends ListSelectionItem> {
   constructor(readonly state: ListSelection<T>) {
     if (this.state.inputs.selectedIds()) {
-      this.anchor();
+      this._anchor();
     }
   }
 
@@ -29,7 +29,7 @@ export class ListSelectionController<T extends ListSelectionItem> {
     }
 
     // TODO: Need to discuss when to drop this.
-    this.anchor();
+    this._anchor();
     this.state.inputs.selectedIds.update(ids => ids.concat(item.id()));
   }
 
@@ -64,7 +64,7 @@ export class ListSelectionController<T extends ListSelectionItem> {
       this.select(item);
     }
 
-    this.anchor();
+    this._anchor();
   }
 
   /** Deselects all items in the list. */
@@ -77,16 +77,16 @@ export class ListSelectionController<T extends ListSelectionItem> {
   /** Selects the items in the list starting at the last selected item. */
   selectFromAnchor() {
     const anchorIndex = this.state.inputs.items().findIndex(i => this.state.anchorId() === i.id());
-    this.selectFromIndex(anchorIndex);
+    this._selectFromIndex(anchorIndex);
   }
 
   /** Selects the items in the list starting at the last active item. */
   selectFromActive() {
-    this.selectFromIndex(this.state.inputs.navigation.prevActiveIndex());
+    this._selectFromIndex(this.state.inputs.navigation.prevActiveIndex());
   }
 
   /** Selects the items in the list starting at the given index. */
-  private selectFromIndex(index: number) {
+  private _selectFromIndex(index: number) {
     if (index === -1) {
       return;
     }
@@ -106,7 +106,7 @@ export class ListSelectionController<T extends ListSelectionItem> {
   }
 
   /** Sets the anchor to the current active index. */
-  private anchor() {
+  private _anchor() {
     const item = this.state.inputs.items()[this.state.inputs.navigation.inputs.activeIndex()];
     this.state.anchorId.set(item.id());
   }

@@ -6,33 +6,45 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {Option} from './option';
-import {ListSelection, ListSelectionInputs} from '../behaviors/list-selection/list-selection';
-import {ListTypeahead, ListTypeaheadInputs} from '../behaviors/list-typeahead/list-typeahead';
-import {ListNavigation, ListNavigationInputs} from '../behaviors/list-navigation/list-navigation';
-import {ListFocus, ListFocusInputs} from '../behaviors/list-focus/list-focus';
+import {OptionPattern} from './option';
+import {
+  ListSelection,
+  ListSelectionInputs,
+} from '@angular/cdk-experimental/ui-patterns/behaviors/list-selection/list-selection';
+import {
+  ListTypeahead,
+  ListTypeaheadInputs,
+} from '@angular/cdk-experimental/ui-patterns/behaviors/list-typeahead/list-typeahead';
+import {
+  ListNavigation,
+  ListNavigationInputs,
+} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
+import {
+  ListFocus,
+  ListFocusInputs,
+} from '@angular/cdk-experimental/ui-patterns/behaviors/list-focus/list-focus';
 import {computed, Signal} from '@angular/core';
 import {ListboxController} from './controller';
 
 /** The required inputs for the listbox. */
-export type ListboxInputs = ListNavigationInputs<Option> &
-  ListSelectionInputs<Option> &
+export type ListboxInputs = ListNavigationInputs<OptionPattern> &
+  ListSelectionInputs<OptionPattern> &
   ListTypeaheadInputs &
-  ListFocusInputs<Option>;
+  ListFocusInputs<OptionPattern>;
 
 /** Controls the state of a listbox. */
 export class ListboxPattern {
   /** Controls navigation for the listbox. */
-  navigation: ListNavigation<Option>;
+  navigation: ListNavigation<OptionPattern>;
 
   /** Controls selection for the listbox. */
-  selection: ListSelection<Option>;
+  selection: ListSelection<OptionPattern>;
 
   /** Controls typeahead for the listbox. */
-  typeahead: ListTypeahead<Option>;
+  typeahead: ListTypeahead<OptionPattern>;
 
   /** Controls focus for the listbox. */
-  focus: ListFocus<Option>;
+  focus: ListFocus<OptionPattern>;
 
   /** Whether the list is vertically or horizontally oriented. */
   orientation: Signal<'vertical' | 'horizontal'>;
@@ -49,7 +61,7 @@ export class ListboxPattern {
   /** The number of items in the listbox. */
   setsize = computed(() => this.navigation.inputs.items().length);
 
-  private get controller(): Promise<ListboxController> {
+  get controller(): Promise<ListboxController> {
     if (this._controller === null) {
       return this.loadController();
     }
@@ -72,8 +84,8 @@ export class ListboxPattern {
 
   /** Loads the controller for the listbox. */
   async loadController(): Promise<ListboxController> {
-    return import('./controller').then(({ListboxController: ListboxController}) => {
-      this._controller = new ListboxController(this);
+    return import('./controller').then(module => {
+      this._controller = new module.ListboxController(this);
       return this._controller;
     });
   }

@@ -8,7 +8,10 @@
 
 import {signal, Signal, WritableSignal} from '@angular/core';
 import {ListSelectionController} from './controller';
-import {ListNavigation, ListNavigationItem} from '../list-navigation/list-navigation';
+import {
+  ListNavigation,
+  ListNavigationItem,
+} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
 
 /** The required properties for selection items. */
 export interface ListSelectionItem extends ListNavigationItem {
@@ -42,7 +45,7 @@ export class ListSelection<T extends ListSelectionItem> {
   /** The navigation controller of the parent list. */
   navigation: ListNavigation<T>;
 
-  private get controller(): Promise<ListSelectionController<T>> {
+  get controller(): Promise<ListSelectionController<T>> {
     if (this._controller === null) {
       return this.loadController();
     }
@@ -56,8 +59,8 @@ export class ListSelection<T extends ListSelectionItem> {
 
   /** Loads the controller for list selection. */
   async loadController(): Promise<ListSelectionController<T>> {
-    return import('./controller').then(({ListSelectionController: ListSelectionController}) => {
-      this._controller = new ListSelectionController(this);
+    return import('./controller').then(m => {
+      this._controller = new m.ListSelectionController(this);
       return this._controller;
     });
   }

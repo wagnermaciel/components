@@ -22,7 +22,7 @@ describe('List Focus', () => {
         id: signal(`${i}`),
         tabindex: signal(-1),
         disabled: signal(false),
-        element: signal(new HTMLElement()),
+        element: signal({focus: () => {}} as HTMLElement),
       })),
     );
   }

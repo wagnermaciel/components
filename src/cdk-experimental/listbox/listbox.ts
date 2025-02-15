@@ -14,10 +14,11 @@ import {
   inject,
   input,
   model,
+  OnDestroy,
   signal,
 } from '@angular/core';
-import {Option} from '../ui-patterns/listbox/option';
-import {ListboxInputs, ListboxPattern} from '../ui-patterns/listbox/listbox';
+import {OptionPattern} from '@angular/cdk-experimental/ui-patterns/listbox/option';
+import {ListboxInputs, ListboxPattern} from '@angular/cdk-experimental/ui-patterns/listbox/listbox';
 import {Directionality} from '@angular/cdk/bidi';
 import {startWith, takeUntil} from 'rxjs/operators';
 import {Subject} from 'rxjs';
@@ -40,7 +41,7 @@ import {Subject} from 'rxjs';
     // '(focusin)': '_handleFocusIn()',
   },
 })
-export class CdkListbox implements ListboxInputs {
+export class CdkListbox implements ListboxInputs, OnDestroy {
   /** Whether the list is vertically or horizontally oriented. */
   orientation = input<'vertical' | 'horizontal'>('vertical');
 
@@ -69,31 +70,31 @@ export class CdkListbox implements ListboxInputs {
   activeIndex = model<number>(0);
 
   /** The CdkOptions nested inside of the CdkListbox. */
-  private cdkOptions = contentChildren(CdkOption, {descendants: true});
+  private _cdkOptions = contentChildren(CdkOption, {descendants: true});
 
   /** The Option UIPatterns of the child CdkOptions. */
-  items = computed(() => this.cdkOptions().map(option => option.state));
+  items = computed(() => this._cdkOptions().map(option => option.state));
 
   /** The directionality (LTR / RTL) context for the application (or a subtree of it). */
-  private dir = inject(Directionality);
+  private _dir = inject(Directionality);
 
   /** A signal wrapper for directionality. */
   directionality = signal<'rtl' | 'ltr'>('rtl');
 
   /** Emits when the list has been destroyed. */
-  private readonly destroyed = new Subject<void>();
+  private readonly _destroyed = new Subject<void>();
 
   /** The Listbox UIPattern. */
   state: ListboxPattern = new ListboxPattern(this);
 
   constructor() {
-    this.dir.change
-      .pipe(startWith(this.dir.value), takeUntil(this.destroyed))
+    this._dir.change
+      .pipe(startWith(this._dir.value), takeUntil(this._destroyed))
       .subscribe(value => this.directionality.set(value));
   }
 
   ngOnDestroy() {
-    this.destroyed.complete();
+    this._destroyed.complete();
   }
 }
 
@@ -122,16 +123,16 @@ export class CdkOption {
   searchTerm = computed(() => this.label() ?? this.element().textContent);
 
   /** A reference to the option element. */
-  private elementRef = inject(ElementRef);
+  private _elementRef = inject(ElementRef);
 
-  element = computed(() => this.elementRef.nativeElement);
+  element = computed(() => this._elementRef.nativeElement);
 
   /** The parent CdkListbox. */
-  private cdkListbox = inject(CdkListbox);
+  private _cdkListbox = inject(CdkListbox);
 
   /** The parent Listbox UIPattern. */
-  listbox = computed(() => this.cdkListbox.state);
+  listbox = computed(() => this._cdkListbox.state);
 
   /** The Option UIPattern. */
-  state: Option = new Option(this);
+  state = new OptionPattern(this);
 }

@@ -18,15 +18,15 @@ ul {
   overflow: scroll;
 }
 
-ul[aria-orientation="horizontal"] {
+ul[aria-orientation='horizontal'] {
   flex-direction: row;
 }
 
-ul[aria-orientation="horizontal"] li::before {
+ul[aria-orientation='horizontal'] li::before {
   display: none;
 }
 
-ul[aria-orientation="horizontal"] li[aria-selected="true"]::before {
+ul[aria-orientation='horizontal'] li[aria-selected='true']::before {
   display: block;
 }
 
@@ -45,7 +45,7 @@ li {
 }
 
 li:hover,
-li[tabindex="0"] {
+li[tabindex='0'] {
   outline: 1px solid var(--mat-sys-outline);
   background: var(--mat-sys-surface-container);
 }
@@ -55,6 +55,6 @@ li:focus-within {
   background: var(--mat-sys-surface-container);
 }
 
-li[aria-selected="true"] {
+li[aria-selected='true'] {
   background-color: var(--mat-sys-secondary-container);
 }

@@ -34,7 +34,7 @@ export class ListTypeaheadController<T extends ListTypeaheadItem> {
 
     clearTimeout(this.timeout);
     this.query.update(q => q + char.toLowerCase());
-    const item = await this.getItem();
+    const item = await this._getItem();
 
     if (item) {
       await this.state.navigation.goto(item);
@@ -50,7 +50,7 @@ export class ListTypeaheadController<T extends ListTypeaheadItem> {
    * Returns the first item whose search term matches the
    * current query starting from the the current anchor index.
    */
-  private async getItem() {
+  private async _getItem() {
     let items = this.state.navigation.inputs.items();
     const after = items.slice(this.anchorIndex()! + 1);
     const before = items.slice(0, this.anchorIndex()!);

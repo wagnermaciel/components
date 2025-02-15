@@ -8,7 +8,10 @@
 
 import {Signal} from '@angular/core';
 import type {ListTypeaheadController} from './controller';
-import {ListNavigationItem, ListNavigation} from '../list-navigation/list-navigation';
+import {
+  ListNavigationItem,
+  ListNavigation,
+} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
 
 /** The required properties for typeahead items. */
 export interface ListTypeaheadItem extends ListNavigationItem {
@@ -27,7 +30,7 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
   /** The navigation controller of the parent list. */
   navigation: ListNavigation<T>;
 
-  private get controller(): Promise<ListTypeaheadController<T>> {
+  get controller(): Promise<ListTypeaheadController<T>> {
     if (this._controller === null) {
       return this.loadController();
     }
@@ -41,8 +44,8 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
 
   /** Loads the controller for list typeahead. */
   async loadController(): Promise<ListTypeaheadController<T>> {
-    return import('./controller').then(({ListTypeaheadController: ListTypeaheadController}) => {
-      this._controller = new ListTypeaheadController(this);
+    return import('./controller').then(m => {
+      this._controller = new m.ListTypeaheadController(this);
       return this._controller;
     });
   }

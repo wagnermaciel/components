@@ -7,8 +7,11 @@
  */
 
 import {computed, Signal} from '@angular/core';
-import {ListNavigation, ListNavigationItem} from '../list-navigation/list-navigation';
-import {ListFocusController} from './controller';
+import {
+  ListNavigation,
+  ListNavigationItem,
+} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
+import type {ListFocusController} from './controller';
 
 /** The required properties for focus items. */
 export interface ListFocusItem extends ListNavigationItem {
@@ -30,7 +33,7 @@ export class ListFocus<T extends ListFocusItem> {
   /** The navigation controller of the parent list. */
   navigation: ListNavigation<ListFocusItem>;
 
-  private get controller(): Promise<ListFocusController<T>> {
+  get controller(): Promise<ListFocusController<T>> {
     if (this._controller === null) {
       return this.loadController();
     }
@@ -44,8 +47,8 @@ export class ListFocus<T extends ListFocusItem> {
 
   /** Loads the controller for list focus. */
   async loadController(): Promise<ListFocusController<T>> {
-    return import('./controller').then(({ListFocusController: ListFocusController}) => {
-      this._controller = new ListFocusController(this);
+    return import('./controller').then(m => {
+      this._controller = new m.ListFocusController(this);
       return this._controller;
     });
   }

@@ -1,4 +1,12 @@
 /**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.dev/license
+ */
+
+/**
  * An event that supports modifier keys.
  */
 export interface EventWithModifiers extends Event {
@@ -38,7 +46,7 @@ export enum ModifierKey {
  * Abstract base class for all event managers.
  */
 export abstract class EventManager<T extends Event> {
-  private submanagers: EventManager<T>[] = [];
+  private _submanagers: EventManager<T>[] = [];
 
   protected configs: EventHandlerConfig<T>[] = [];
   protected beforeFns: ((event: T) => void)[] = [];
@@ -62,7 +70,7 @@ export abstract class EventManager<T extends Event> {
    */
   static compose<T extends Event>(...managers: EventManager<T>[]) {
     const composedManager = new GenericEventManager<T>();
-    composedManager.submanagers = managers;
+    composedManager._submanagers = managers;
     return composedManager;
   }
 
@@ -81,7 +89,7 @@ export abstract class EventManager<T extends Event> {
     for (const fn of this.beforeFns) {
       fn(event);
     }
-    for (const submanager of this.submanagers) {
+    for (const submanager of this._submanagers) {
       await submanager.handle(event);
     }
     for (const config of this.getConfigs(event)) {
@@ -130,7 +138,7 @@ export abstract class EventManager<T extends Event> {
    * Checks whether this event manager is confugred to handle the given event.
    */
   protected isHandled(event: T): boolean {
-    return this.getConfigs(event).length > 0 || this.submanagers.some(sm => sm.isHandled(event));
+    return this.getConfigs(event).length > 0 || this._submanagers.some(sm => sm.isHandled(event));
   }
 }
 

@@ -41,7 +41,7 @@ export class ListNavigation<T extends ListNavigationItem> {
   /** The last index that was active. */
   prevActiveIndex = signal(0);
 
-  private get controller(): Promise<ListNavigationController<T>> {
+  get controller(): Promise<ListNavigationController<T>> {
     if (this._controller === null) {
       return this.loadController();
     }
@@ -55,8 +55,8 @@ export class ListNavigation<T extends ListNavigationItem> {
 
   /** Loads the controller for list navigation. */
   async loadController(): Promise<ListNavigationController<T>> {
-    return import('./controller').then(({ListNavigationController: ListNavigationController}) => {
-      this._controller = new ListNavigationController(this);
+    return import('./controller').then(m => {
+      this._controller = new m.ListNavigationController(this);
       return this._controller;
     });
   }

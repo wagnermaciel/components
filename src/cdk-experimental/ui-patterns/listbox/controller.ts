@@ -7,9 +7,9 @@
  */
 
 import {computed} from '@angular/core';
-import {KeyboardEventManager} from '../behaviors/event-manager/keyboard-event-manager';
-import {ModifierKey as Modifier} from '../behaviors/event-manager/event-manager';
-import {MouseEventManager} from '../behaviors/event-manager/mouse-event-manager';
+import {KeyboardEventManager} from '@angular/cdk-experimental/ui-patterns/behaviors/event-manager/keyboard-event-manager';
+import {ModifierKey as Modifier} from '@angular/cdk-experimental/ui-patterns/behaviors/event-manager/event-manager';
+import {MouseEventManager} from '@angular/cdk-experimental/ui-patterns/behaviors/event-manager/mouse-event-manager';
 import {ListboxPattern} from './listbox';
 
 /** The selection operations that the listbox can perform. */
@@ -70,20 +70,20 @@ export class ListboxController {
 
     if (this.state.inputs.multiselectable()) {
       manager
-        .on(Modifier.Shift, ' ', () => this.updateSelection({selectFromAnchor: true}))
+        .on(Modifier.Shift, ' ', () => this._updateSelection({selectFromAnchor: true}))
         .on(Modifier.Shift, this.prevKey, () => this.prev({toggle: true}))
         .on(Modifier.Shift, this.nextKey, () => this.next({toggle: true}))
         .on(Modifier.Ctrl | Modifier.Shift, 'Home', () => this.first({selectFromActive: true}))
         .on(Modifier.Ctrl | Modifier.Shift, 'End', () => this.last({selectFromActive: true}))
-        .on(Modifier.Ctrl, 'A', () => this.updateSelection({selectAll: true}));
+        .on(Modifier.Ctrl, 'A', () => this._updateSelection({selectAll: true}));
     }
 
     if (!this.followFocus() && this.state.inputs.multiselectable()) {
-      manager.on(' ', () => this.updateSelection({toggle: true}));
+      manager.on(' ', () => this._updateSelection({toggle: true}));
     }
 
     if (!this.followFocus() && !this.state.inputs.multiselectable()) {
-      manager.on(' ', () => this.updateSelection({toggleOne: true}));
+      manager.on(' ', () => this._updateSelection({toggleOne: true}));
     }
 
     if (this.state.inputs.multiselectable() && this.followFocus()) {
@@ -132,53 +132,53 @@ export class ListboxController {
   }
 
   /** Navigates to the first option in the listbox. */
-  private async first(opts?: SelectOptions) {
+  async first(opts?: SelectOptions) {
     await this.state.navigation.first();
     await this.state.focus.focus();
-    await this.updateSelection(opts);
+    await this._updateSelection(opts);
   }
 
   /** Navigates to the last option in the listbox. */
-  private async last(opts?: SelectOptions) {
+  async last(opts?: SelectOptions) {
     await this.state.navigation.last();
     await this.state.focus.focus();
-    await this.updateSelection(opts);
+    await this._updateSelection(opts);
   }
 
   /** Navigates to the next option in the listbox. */
-  private async next(opts?: SelectOptions) {
+  async next(opts?: SelectOptions) {
     await this.state.navigation.next();
     await this.state.focus.focus();
-    await this.updateSelection(opts);
+    await this._updateSelection(opts);
   }
 
   /** Navigates to the previous option in the listbox. */
-  private async prev(opts?: SelectOptions) {
+  async prev(opts?: SelectOptions) {
     await this.state.navigation.prev();
     await this.state.focus.focus();
-    await this.updateSelection(opts);
+    await this._updateSelection(opts);
   }
 
   /** Navigates to the given item in the listbox. */
-  private async goto(event: MouseEvent, opts?: SelectOptions) {
-    const item = this.getItem(event);
+  async goto(event: MouseEvent, opts?: SelectOptions) {
+    const item = this._getItem(event);
 
     if (item) {
       await this.state.navigation.goto(item);
       await this.state.focus.focus();
-      await this.updateSelection(opts);
+      await this._updateSelection(opts);
     }
   }
 
   /** Handles typeahead navigation for the listbox. */
-  private async typeahead(char: string, opts?: SelectOptions) {
+  async typeahead(char: string, opts?: SelectOptions) {
     await this.state.typeahead.search(char);
     await this.state.focus.focus();
-    await this.updateSelection(opts);
+    await this._updateSelection(opts);
   }
 
   /** Handles updating selection for the listbox. */
-  private async updateSelection(opts?: SelectOptions) {
+  private async _updateSelection(opts?: SelectOptions) {
     if (opts?.select) {
       await this.state.selection.select();
     }
@@ -202,7 +202,7 @@ export class ListboxController {
     }
   }
 
-  private getItem(e: MouseEvent) {
+  private _getItem(e: MouseEvent) {
     if (!(e.target instanceof HTMLElement)) {
       return;
     }

@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.dev/license
+ */
+
 import {Signal} from '@angular/core';
 import {
   EventHandlerConfig,
@@ -75,12 +83,12 @@ export class KeyboardEventManager extends EventManager<KeyboardEvent> {
   }
 
   getConfigs(event: KeyboardEvent) {
-    return this.configs.filter(config => this.checkKey(config, event));
+    return this.configs.filter(config => this._checkKey(config, event));
   }
 
   // TODO: Make modifiers accept a signal as well.
 
-  private checkKey(config: KeyboardEventHandlerConfig, event: KeyboardEvent) {
+  private _checkKey(config: KeyboardEventHandlerConfig, event: KeyboardEvent) {
     if (config.key instanceof RegExp) {
       return config.key.test(event.key);
     }

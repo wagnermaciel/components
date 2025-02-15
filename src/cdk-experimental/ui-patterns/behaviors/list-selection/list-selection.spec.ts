@@ -63,7 +63,7 @@ describe('List Selection', () => {
       const selection = getSelection(items, nav);
 
       await selection.select(); // [0]
-      expect(selection.selectedIds()).toEqual(['0']);
+      expect(selection.inputs.selectedIds()).toEqual(['0']);
     });
 
     it('should select multiple options', async () => {
@@ -75,7 +75,7 @@ describe('List Selection', () => {
       await nav.next();
       await selection.select(); // [0, 1]
 
-      expect(selection.selectedIds()).toEqual(['0', '1']);
+      expect(selection.inputs.selectedIds()).toEqual(['0', '1']);
     });
 
     it('should not select multiple options', async () => {
@@ -89,7 +89,7 @@ describe('List Selection', () => {
       await nav.next();
       await selection.select(); // [1]
 
-      expect(selection.selectedIds()).toEqual(['1']);
+      expect(selection.inputs.selectedIds()).toEqual(['1']);
     });
 
     it('should not select disabled items', async () => {
@@ -99,7 +99,7 @@ describe('List Selection', () => {
       items()[0].disabled.set(true);
 
       await selection.select(); // []
-      expect(selection.selectedIds()).toEqual([]);
+      expect(selection.inputs.selectedIds()).toEqual([]);
     });
 
     it('should do nothing to already selected items', async () => {
@@ -110,7 +110,7 @@ describe('List Selection', () => {
       await selection.select(); // [0]
       await selection.select(); // [0]
 
-      expect(selection.selectedIds()).toEqual(['0']);
+      expect(selection.inputs.selectedIds()).toEqual(['0']);
     });
   });
 
@@ -120,7 +120,7 @@ describe('List Selection', () => {
       const nav = getNavigation(items);
       const selection = getSelection(items, nav);
       await selection.deselect(); // []
-      expect(selection.selectedIds().length).toBe(0);
+      expect(selection.inputs.selectedIds().length).toBe(0);
     });
 
     it('should not deselect disabled items', async () => {
@@ -132,7 +132,7 @@ describe('List Selection', () => {
       items()[0].disabled.set(true);
       await selection.deselect(); // [0]
 
-      expect(selection.selectedIds()).toEqual(['0']);
+      expect(selection.inputs.selectedIds()).toEqual(['0']);
     });
   });
 
@@ -143,7 +143,7 @@ describe('List Selection', () => {
       const selection = getSelection(items, nav);
 
       await selection.toggle(); // [0]
-      expect(selection.selectedIds()).toEqual(['0']);
+      expect(selection.inputs.selectedIds()).toEqual(['0']);
     });
 
     it('should deselect a selected item', async () => {
@@ -152,7 +152,7 @@ describe('List Selection', () => {
       const selection = getSelection(items, nav);
       await selection.select(); // [0]
       await selection.toggle(); // []
-      expect(selection.selectedIds().length).toBe(0);
+      expect(selection.inputs.selectedIds().length).toBe(0);
     });
   });
 
@@ -162,7 +162,7 @@ describe('List Selection', () => {
       const nav = getNavigation(items);
       const selection = getSelection(items, nav);
       await selection.selectAll();
-      expect(selection.selectedIds()).toEqual(['0', '1', '2', '3', '4']);
+      expect(selection.inputs.selectedIds()).toEqual(['0', '1', '2', '3', '4']);
     });
 
     it('should do nothing if a list is not multiselectable', async () => {
@@ -170,7 +170,7 @@ describe('List Selection', () => {
       const nav = getNavigation(items);
       const selection = getSelection(items, nav);
       await selection.selectAll();
-      expect(selection.selectedIds()).toEqual(['0', '1', '2', '3', '4']);
+      expect(selection.inputs.selectedIds()).toEqual(['0', '1', '2', '3', '4']);
     });
   });
 
@@ -180,7 +180,7 @@ describe('List Selection', () => {
       const nav = getNavigation(items);
       const selection = getSelection(items, nav);
       await selection.deselectAll(); // []
-      expect(selection.selectedIds().length).toBe(0);
+      expect(selection.inputs.selectedIds().length).toBe(0);
     });
   });
 
@@ -195,7 +195,7 @@ describe('List Selection', () => {
       await nav.next();
       await selection.selectFromAnchor(); // [0, 1, 2]
 
-      expect(selection.selectedIds()).toEqual(['0', '1', '2']);
+      expect(selection.inputs.selectedIds()).toEqual(['0', '1', '2']);
     });
 
     it('should select all items from an anchor at a higher index', async () => {
@@ -210,7 +210,7 @@ describe('List Selection', () => {
       await nav.prev();
       await selection.selectFromAnchor(); // [3, 1, 2]
 
-      expect(selection.selectedIds()).toEqual(['3', '1', '2']);
+      expect(selection.inputs.selectedIds()).toEqual(['3', '1', '2']);
     });
   });
 });
