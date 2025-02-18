@@ -9,7 +9,7 @@ ng_module(
         exclude = ["**/*.spec.ts"],
     ),
     deps = [
-        "//src/cdk-experimental/ui-patterns/listbox",
+        "//src/cdk-experimental/ui-patterns:listbox",
         "//src/cdk/bidi",
     ],
 )
