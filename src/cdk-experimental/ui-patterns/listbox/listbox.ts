@@ -7,22 +7,10 @@
  */
 
 import {OptionPattern} from './option';
-import {
-  ListSelection,
-  ListSelectionInputs,
-} from '@angular/cdk-experimental/ui-patterns/behaviors/list-selection/list-selection';
-import {
-  ListTypeahead,
-  ListTypeaheadInputs,
-} from '@angular/cdk-experimental/ui-patterns/behaviors/list-typeahead/list-typeahead';
-import {
-  ListNavigation,
-  ListNavigationInputs,
-} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
-import {
-  ListFocus,
-  ListFocusInputs,
-} from '@angular/cdk-experimental/ui-patterns/behaviors/list-focus/list-focus';
+import {ListSelection, ListSelectionInputs} from '../behaviors/list-selection/list-selection';
+import {ListTypeahead, ListTypeaheadInputs} from '../behaviors/list-typeahead/list-typeahead';
+import {ListNavigation, ListNavigationInputs} from '../behaviors/list-navigation/list-navigation';
+import {ListFocus, ListFocusInputs} from '../behaviors/list-focus/list-focus';
 import {computed, Signal} from '@angular/core';
 import {ListboxController} from './controller';
 

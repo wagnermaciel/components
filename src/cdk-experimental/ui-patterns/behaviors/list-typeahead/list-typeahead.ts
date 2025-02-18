@@ -8,10 +8,7 @@
 
 import {Signal} from '@angular/core';
 import type {ListTypeaheadController} from './controller';
-import {
-  ListNavigationItem,
-  ListNavigation,
-} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
+import {ListNavigationItem, ListNavigation} from '../list-navigation/list-navigation';
 
 /** The required properties for typeahead items. */
 export interface ListTypeaheadItem extends ListNavigationItem {

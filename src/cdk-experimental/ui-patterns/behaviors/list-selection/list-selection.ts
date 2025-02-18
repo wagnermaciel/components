@@ -8,10 +8,7 @@
 
 import {signal, Signal, WritableSignal} from '@angular/core';
 import {ListSelectionController} from './controller';
-import {
-  ListNavigation,
-  ListNavigationItem,
-} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
+import {ListNavigation, ListNavigationItem} from '../list-navigation/list-navigation';
 
 /** The required properties for selection items. */
 export interface ListSelectionItem extends ListNavigationItem {

@@ -7,10 +7,7 @@
  */
 
 import {computed, Signal} from '@angular/core';
-import {
-  ListNavigation,
-  ListNavigationItem,
-} from '@angular/cdk-experimental/ui-patterns/behaviors/list-navigation/list-navigation';
+import {ListNavigation, ListNavigationItem} from '../list-navigation/list-navigation';
 import type {ListFocusController} from './controller';
 
 /** The required properties for focus items. */
