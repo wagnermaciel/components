@@ -8,9 +8,9 @@
 
 import {computed, signal, Signal} from '@angular/core';
 import {ListSelectionItem} from '../behaviors/list-selection/list-selection';
-import {ListTypeaheadItem} from '@angular/cdk-experimental/ui-patterns/behaviors/list-typeahead/list-typeahead';
+import {ListTypeaheadItem} from '../behaviors/list-typeahead/list-typeahead';
 import {ListNavigationItem} from '../behaviors/list-navigation/list-navigation';
-import {ListFocusItem} from '@angular/cdk-experimental/ui-patterns/behaviors/list-focus/list-focus';
+import {ListFocusItem} from '../behaviors/list-focus/list-focus';
 import {ListboxPattern} from './listbox';
 
 /** The required inputs to options. */

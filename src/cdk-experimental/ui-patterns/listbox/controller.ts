@@ -7,9 +7,9 @@
  */
 
 import {computed} from '@angular/core';
-import {KeyboardEventManager} from '@angular/cdk-experimental/ui-patterns/behaviors/event-manager/keyboard-event-manager';
-import {ModifierKey as Modifier} from '@angular/cdk-experimental/ui-patterns/behaviors/event-manager/event-manager';
-import {MouseEventManager} from '@angular/cdk-experimental/ui-patterns/behaviors/event-manager/mouse-event-manager';
+import {KeyboardEventManager} from '../behaviors/event-manager/keyboard-event-manager';
+import {ModifierKey as Modifier} from '../behaviors/event-manager/event-manager';
+import {MouseEventManager} from '../behaviors/event-manager/mouse-event-manager';
 import {ListboxPattern} from './listbox';
 
 /** The selection operations that the listbox can perform. */
