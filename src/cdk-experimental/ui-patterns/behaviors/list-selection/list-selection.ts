@@ -31,7 +31,7 @@ export interface ListSelectionInputs<T extends ListSelectionItem> {
   selectedIds: WritableSignal<string[]>;
 
   /** The selection strategy used by the list. */
-  selectionStrategy: Signal<'follow' | 'explicit'>;
+  selectionMode: Signal<'follow' | 'explicit'>;
 }
 
 /** Controls selection for a list of items. */

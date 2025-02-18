@@ -1,6 +1,7 @@
 <div class="example-listbox-controls">
   <mat-checkbox [formControl]="wrap">Wrap</mat-checkbox>
   <mat-checkbox [formControl]="multi">Multi</mat-checkbox>
+  <mat-checkbox [formControl]="disabled">Disabled</mat-checkbox>
   <mat-checkbox [formControl]="skipDisabled">Skip Disabled</mat-checkbox>
 
   <mat-form-field subscriptSizing="dynamic" appearance="outline">
@@ -13,7 +14,7 @@
 
   <mat-form-field subscriptSizing="dynamic" appearance="outline">
     <mat-label>Selection strategy</mat-label>
-    <mat-select [(value)]="selectionStrategy">
+    <mat-select [(value)]="selectionMode">
       <mat-option value="explicit">Explicit</mat-option>
       <mat-option value="follow">Follow Focus</mat-option>
     </mat-select>
@@ -21,7 +22,7 @@
 
   <mat-form-field subscriptSizing="dynamic" appearance="outline">
     <mat-label>Focus strategy</mat-label>
-    <mat-select [(value)]="focusStrategy">
+    <mat-select [(value)]="focusMode">
       <mat-option value="roving tabindex">Roving Tabindex</mat-option>
       <mat-option value="activedescendant">Active Descendant</mat-option>
     </mat-select>
@@ -32,11 +33,12 @@
 <ul
   cdkListbox
   [wrap]="wrap.value"
+  [disabled]="disabled.value"
   [multiselectable]="multi.value"
   [skipDisabled]="skipDisabled.value"
   [orientation]="orientation"
-  [focusStrategy]="focusStrategy"
-  [selectionStrategy]="selectionStrategy"
+  [focusMode]="focusMode"
+  [selectionMode]="selectionMode"
 >
   <label id="fruit-example-label">List of Fruits</label>
 

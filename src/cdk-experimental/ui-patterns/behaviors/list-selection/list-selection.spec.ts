@@ -51,7 +51,7 @@ describe('List Selection', () => {
       navigation,
       selectedIds: signal([]),
       multiselectable: signal(true),
-      selectionStrategy: signal('explicit'),
+      selectionMode: signal('explicit'),
       ...args,
     });
   }

@@ -22,7 +22,7 @@ export interface ListFocusItem extends ListNavigationItem {
 /** The required inputs for list focus. */
 export interface ListFocusInputs<T extends ListFocusItem> {
   /** The focus strategy used by the list. */
-  focusStrategy: Signal<'roving tabindex' | 'activedescendant'>;
+  focusMode: Signal<'roving' | 'activedescendant'>;
 }
 
 /** Controls focus for a list of items. */
@@ -53,7 +53,7 @@ export class ListFocus<T extends ListFocusItem> {
   /** Returns the id of the current active item. */
   getActiveDescendant(): Signal<string | null> {
     return computed(() => {
-      if (this.inputs.focusStrategy() === 'roving tabindex') {
+      if (this.inputs.focusMode() === 'roving') {
         return null;
       }
       return this.navigation.inputs.items()[this.navigation.inputs.activeIndex()].id();
@@ -62,13 +62,13 @@ export class ListFocus<T extends ListFocusItem> {
 
   /** Returns a signal that keeps track of the tabindex for the list. */
   getListTabindex(): Signal<-1 | 0> {
-    return computed(() => (this.inputs.focusStrategy() === 'activedescendant' ? 0 : -1));
+    return computed(() => (this.inputs.focusMode() === 'activedescendant' ? 0 : -1));
   }
 
   /** Returns a signal that keeps track of the tabindex for the given item. */
   getItemTabindex(item: T): Signal<-1 | 0> {
     return computed(() => {
-      if (this.inputs.focusStrategy() === 'activedescendant') {
+      if (this.inputs.focusMode() === 'activedescendant') {
         return -1;
       }
       const index = this.navigation.inputs.items().indexOf(item);

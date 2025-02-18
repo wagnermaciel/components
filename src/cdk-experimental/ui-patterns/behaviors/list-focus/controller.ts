@@ -14,7 +14,7 @@ export class ListFocusController<T extends ListFocusItem> {
 
   /** Focuses the current active item. */
   focus() {
-    if (this.state.inputs.focusStrategy() === 'activedescendant') {
+    if (this.state.inputs.focusMode() === 'activedescendant') {
       return;
     }
 

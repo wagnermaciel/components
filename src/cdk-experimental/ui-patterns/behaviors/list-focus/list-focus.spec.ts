@@ -48,12 +48,12 @@ describe('List Focus', () => {
   ): ListFocus<T> {
     return new ListFocus({
       navigation,
-      focusStrategy: signal('roving tabindex'),
+      focusMode: signal('roving'),
       ...args,
     });
   }
 
-  describe('roving tabindex', () => {
+  describe('roving', () => {
     it('should set the list tabindex to -1', () => {
       const items = getItems(5);
       const nav = getNavigation(items);
@@ -110,7 +110,7 @@ describe('List Focus', () => {
       const items = getItems(5);
       const nav = getNavigation(items);
       const focus = getFocus(nav, {
-        focusStrategy: signal('activedescendant'),
+        focusMode: signal('activedescendant'),
       });
       const tabindex = focus.getListTabindex();
       expect(tabindex()).toBe(0);
@@ -120,7 +120,7 @@ describe('List Focus', () => {
       const items = getItems(5);
       const nav = getNavigation(items);
       const focus = getFocus(nav, {
-        focusStrategy: signal('activedescendant'),
+        focusMode: signal('activedescendant'),
       });
       const activeId = focus.getActiveDescendant();
       expect(activeId()).toBe(items()[0].id());
@@ -130,7 +130,7 @@ describe('List Focus', () => {
       const items = getItems(5);
       const nav = getNavigation(items);
       const focus = getFocus(nav, {
-        focusStrategy: signal('activedescendant'),
+        focusMode: signal('activedescendant'),
       });
 
       items().forEach(i => {
@@ -148,7 +148,7 @@ describe('List Focus', () => {
       const items = getItems(5);
       const nav = getNavigation(items);
       const focus = getFocus(nav, {
-        focusStrategy: signal('activedescendant'),
+        focusMode: signal('activedescendant'),
       });
       const activeId = focus.getActiveDescendant();
 

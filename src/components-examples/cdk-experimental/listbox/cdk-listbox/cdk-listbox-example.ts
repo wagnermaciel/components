@@ -24,11 +24,12 @@ import {MatPseudoCheckbox} from '@angular/material/core';
 })
 export class CdkListboxExample {
   orientation: 'vertical' | 'horizontal' = 'vertical';
-  focusStrategy: 'roving tabindex' | 'activedescendant' = 'roving tabindex';
-  selectionStrategy: 'explicit' | 'follow' = 'explicit';
+  focusMode: 'roving' | 'activedescendant' = 'roving';
+  selectionMode: 'explicit' | 'follow' = 'explicit';
 
   wrap = new FormControl(true, {nonNullable: true});
-  multi = new FormControl(true, {nonNullable: true});
+  multi = new FormControl(false, {nonNullable: true});
+  disabled = new FormControl(false, {nonNullable: true});
   skipDisabled = new FormControl(true, {nonNullable: true});
 
   fruits = [

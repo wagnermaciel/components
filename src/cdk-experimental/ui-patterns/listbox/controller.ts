@@ -25,7 +25,7 @@ interface SelectOptions {
 
 /** Controls selection for a list of items. */
 export class ListboxController {
-  followFocus = computed(() => this.state.inputs.selectionStrategy() === 'follow');
+  followFocus = computed(() => this.state.inputs.selectionMode() === 'follow');
 
   /** The key used to navigate to the previous item in the list. */
   prevKey = computed(() => {
@@ -124,11 +124,15 @@ export class ListboxController {
 
   /** Handles keydown events for the listbox. */
   onKeydown(event: KeyboardEvent) {
-    this.keydown().handle(event);
+    if (!this.state.disabled()) {
+      this.keydown().handle(event);
+    }
   }
 
   onMousedown(event: MouseEvent) {
-    this.mousedown().handle(event);
+    if (!this.state.disabled()) {
+      this.mousedown().handle(event);
+    }
   }
 
   /** Navigates to the first option in the listbox. */

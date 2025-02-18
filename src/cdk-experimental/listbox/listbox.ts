@@ -23,6 +23,20 @@ import {Directionality} from '@angular/cdk/bidi';
 import {startWith, takeUntil} from 'rxjs/operators';
 import {Subject} from 'rxjs';
 
+/**
+ * A listbox container.
+ *
+ * Listboxes are used to display a list of items for a user to select from. The CdkListbox is meant
+ * to be used in conjunction with CdkOption as follows:
+ *
+ * ```html
+ * <ul cdkListbox>
+ *   <li cdkOption>Item 1</li>
+ *   <li cdkOption>Item 2</li>
+ *   <li cdkOption>Item 3</li>
+ * </ul>
+ * ```
+ */
 @Directive({
   selector: '[cdkListbox]',
   exportAs: 'cdkListbox',
@@ -30,18 +44,19 @@ import {Subject} from 'rxjs';
     'role': 'listbox',
     'class': 'cdk-listbox',
     '[attr.tabindex]': 'state.tabindex()',
-    // '[attr.aria-disabled]': 'state.disabled()',
+    '[attr.aria-disabled]': 'state.disabled()',
     '[attr.aria-multiselectable]': 'state.multiselectable()',
     '[attr.aria-activedescendant]': 'state.activedescendant()',
     '[attr.aria-orientation]': 'state.orientation()',
     '(focusin)': 'state.onFocus()',
     '(keydown)': 'state.onKeydown($event)',
     '(mousedown)': 'state.onMousedown($event)',
-    // '(focusout)': '_handleFocusOut($event)',
-    // '(focusin)': '_handleFocusIn()',
   },
 })
 export class CdkListbox implements ListboxInputs, OnDestroy {
+  /** The directionality (LTR / RTL) context for the application (or a subtree of it). */
+  private _dir = inject(Directionality);
+
   /** Whether the list is vertically or horizontally oriented. */
   orientation = input<'vertical' | 'horizontal'>('vertical');
 
@@ -55,13 +70,13 @@ export class CdkListbox implements ListboxInputs, OnDestroy {
   skipDisabled = input<boolean>(true);
 
   /** The focus strategy used by the list. */
-  focusStrategy = input<'roving tabindex' | 'activedescendant'>('roving tabindex');
+  focusMode = input<'roving' | 'activedescendant'>('roving');
 
   /** The selection strategy used by the list. */
-  selectionStrategy = input<'follow' | 'explicit'>('follow');
+  selectionMode = input<'follow' | 'explicit'>('follow');
 
   /** The amount of time before the typeahead search is reset. */
-  delay = input<number>(0.5);
+  delay = input<number>(0.5); // Picked arbitrarily.
 
   /** The ids of the current selected items. */
   selectedIds = model<string[]>([]);
@@ -75,14 +90,14 @@ export class CdkListbox implements ListboxInputs, OnDestroy {
   /** The Option UIPatterns of the child CdkOptions. */
   items = computed(() => this._cdkOptions().map(option => option.state));
 
-  /** The directionality (LTR / RTL) context for the application (or a subtree of it). */
-  private _dir = inject(Directionality);
-
   /** A signal wrapper for directionality. */
-  directionality = signal<'rtl' | 'ltr'>('rtl');
+  directionality = signal<'ltr' | 'rtl'>('ltr');
 
   /** Emits when the list has been destroyed. */
   private readonly _destroyed = new Subject<void>();
+
+  /** Whether the listbox is disabled. */
+  disabled = input<boolean>(false);
 
   /** The Listbox UIPattern. */
   state: ListboxPattern = new ListboxPattern(this);
@@ -98,6 +113,7 @@ export class CdkListbox implements ListboxInputs, OnDestroy {
   }
 }
 
+/** A selectable option in a CdkListbox. */
 @Directive({
   selector: '[cdkOption]',
   exportAs: 'cdkOption',
@@ -107,12 +123,15 @@ export class CdkListbox implements ListboxInputs, OnDestroy {
     '[attr.aria-selected]': 'state.selected()',
     '[attr.tabindex]': 'state.tabindex()',
     '[attr.aria-disabled]': 'state.disabled()',
-    // '[class.cdk-option-active]': 'isActive()',
-    // '(click)': '_clicked.next($event)',
-    // '(focus)': '_handleFocus()',
   },
 })
 export class CdkOption {
+  /** A reference to the option element. */
+  private _elementRef = inject(ElementRef);
+
+  /** The parent CdkListbox. */
+  private _cdkListbox = inject(CdkListbox);
+
   /** Whether an item is disabled. */
   disabled = input<boolean>(false);
 
@@ -123,12 +142,7 @@ export class CdkOption {
   searchTerm = computed(() => this.label() ?? this.element().textContent);
 
   /** A reference to the option element. */
-  private _elementRef = inject(ElementRef);
-
   element = computed(() => this._elementRef.nativeElement);
-
-  /** The parent CdkListbox. */
-  private _cdkListbox = inject(CdkListbox);
 
   /** The parent Listbox UIPattern. */
   listbox = computed(() => this._cdkListbox.state);

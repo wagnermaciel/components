@@ -18,7 +18,9 @@ import {ListboxController} from './controller';
 export type ListboxInputs = ListNavigationInputs<OptionPattern> &
   ListSelectionInputs<OptionPattern> &
   ListTypeaheadInputs &
-  ListFocusInputs<OptionPattern>;
+  ListFocusInputs<OptionPattern> & {
+    disabled: Signal<boolean>;
+  };
 
 /** Controls the state of a listbox. */
 export class ListboxPattern {
@@ -36,6 +38,9 @@ export class ListboxPattern {
 
   /** Whether the list is vertically or horizontally oriented. */
   orientation: Signal<'vertical' | 'horizontal'>;
+
+  /** Whether the listbox is disabled. */
+  disabled: Signal<boolean>;
 
   /** The tabindex of the listbox. */
   tabindex: Signal<-1 | 0>;
@@ -58,6 +63,7 @@ export class ListboxPattern {
   private _controller: ListboxController | null = null;
 
   constructor(readonly inputs: ListboxInputs) {
+    this.disabled = inputs.disabled;
     this.orientation = inputs.orientation;
     this.multiselectable = inputs.multiselectable;
 

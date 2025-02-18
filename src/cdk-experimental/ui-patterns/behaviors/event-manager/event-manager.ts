@@ -8,6 +8,8 @@
 
 /**
  * An event that supports modifier keys.
+ *
+ * Matches the native KeyboardEvent, MouseEvent, and TouchEvent.
  */
 export interface EventWithModifiers extends Event {
   ctrlKey: boolean;
@@ -18,6 +20,8 @@ export interface EventWithModifiers extends Event {
 
 /**
  * Options that are applicable to all event handlers.
+ *
+ * This library has not yet had a need for stopPropagationImmediate.
  */
 export interface EventHandlerOptions {
   stopPropagation: boolean;
@@ -44,6 +48,9 @@ export enum ModifierKey {
 
 /**
  * Abstract base class for all event managers.
+ *
+ * Event managers are designed to normalize how event handlers are authored and create a safety net
+ * for common event handling gotchas like remembering to call preventDefault or stopPropagation.
  */
 export abstract class EventManager<T extends Event> {
   private _submanagers: EventManager<T>[] = [];
