@@ -84,7 +84,7 @@ export class MouseEventManager extends EventManager<MouseEvent> {
   ): this;
 
   on(...args: any[]) {
-    const {button, handler, modifiers, options} = this.getArgs(...args);
+    const {button, handler, modifiers, options} = this.normalizeHandlerOptions(...args);
 
     // TODO: Add strict type checks again when finalizing this API.
 
@@ -98,7 +98,7 @@ export class MouseEventManager extends EventManager<MouseEvent> {
     return this;
   }
 
-  getArgs(...args: any[]) {
+  normalizeHandlerOptions(...args: any[]) {
     if (typeof args[0] === 'number' && typeof args[1] === 'number') {
       return {
         button: args[0],
