@@ -17,8 +17,8 @@ import {
   OnDestroy,
   signal,
 } from '@angular/core';
-import {OptionPattern} from '../ui-patterns/listbox/option';
-import {ListboxInputs, ListboxPattern} from '../ui-patterns/listbox/listbox';
+import {OptionPattern} from '@angular/cdk-experimental/ui-patterns/listbox/option';
+import {ListboxInputs, ListboxPattern} from '@angular/cdk-experimental/ui-patterns/listbox/listbox';
 import {Directionality} from '@angular/cdk/bidi';
 import {startWith, takeUntil} from 'rxjs/operators';
 import {Subject} from 'rxjs';
