@@ -6,9 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {computed, signal, WritableSignal, InputSignal, untracked} from '@angular/core';
-import {SignalLike, toSignal} from '../behaviors/signal-like/signal-like';
-import {KeyboardEventManager} from '../behaviors/event-manager/event-manager';
+import {computed, signal, WritableSignal, untracked} from '@angular/core';
+import {SignalLike} from '../behaviors/signal-like/signal-like';
+import {KeyboardEventManager} from '../behaviors/event-manager/keyboard-event-manager';
 import {PointerEventManager} from '../behaviors/event-manager/pointer-event-manager';
 import {ListFocus, ListFocusInputs} from '../behaviors/list-focus/list-focus';
 import {ListNavigation, ListNavigationInputs} from '../behaviors/list-navigation/list-navigation';
@@ -16,19 +16,20 @@ import {ListNavigation, ListNavigationInputs} from '../behaviors/list-navigation
 /**
  * Represents an item within a toolbar.
  * Each item typically corresponds to a focusable element.
+ * Properties are defined as methods returning values, consistent with `OptionPattern` for `SignalLike` usage.
  */
 export interface ToolbarItemPattern {
   /** Whether the item is currently disabled. Disabled items cannot be activated or focused. */
-  disabled: SignalLike<boolean>;
+  disabled(): boolean;
 
   /** The HTML element associated with this toolbar item. */
-  element: SignalLike<HTMLElement>;
+  element(): HTMLElement;
 
   /** The numerical index of this item within the toolbar's list of items. */
-  index: SignalLike<number>;
+  index(): number;
 
   /** Optional ID for the item, used for `aria-activedescendant` to improve accessibility. */
-  id?: SignalLike<string | null>;
+  id?(): string | null;
   // TODO: Consider adding role or type if items can vary significantly (e.g., button, toggle button).
 }
 
@@ -70,13 +71,13 @@ export class ToolbarPattern<T extends ToolbarItemPattern> {
   private readonly _wrap = signal(true);
 
   /** The orientation of the toolbar (horizontal or vertical). Derived from `inputs.orientation`. */
-  readonly orientation = computed(() => toSignal(this.inputs.orientation)());
+  readonly orientation = computed(() => this.inputs.orientation());
 
   /** Whether the entire toolbar is disabled. Derived from `focusManager.isListDisabled()`. */
   readonly disabled = computed(() => this.focusManager.isListDisabled());
 
   /** The array of items in the toolbar. Derived from `inputs.items`. */
-  readonly items = computed(() => toSignal(this.inputs.items)());
+  readonly items = computed(() => this.inputs.items());
 
   /**
    * The WritableSignal for the active item's index.
@@ -85,13 +86,13 @@ export class ToolbarPattern<T extends ToolbarItemPattern> {
   readonly activeIndex: WritableSignal<number>;
 
   /** The text direction of the toolbar (ltr or rtl). Derived from `inputs.textDirection`. */
-  readonly textDirection = computed(() => toSignal(this.inputs.textDirection)());
+  readonly textDirection = computed(() => this.inputs.textDirection());
 
   /**
    * Final computed signal indicating whether navigation should wrap around.
    * Combines the internal `_wrap` default with the `inputs.wrap` configuration.
    */
-  readonly wrap = computed(() => this._wrap() && toSignal(this.inputs.wrap)());
+  readonly wrap = computed(() => this._wrap() && this.inputs.wrap());
 
   /**
    * The ID of the currently active toolbar item, for `aria-activedescendant`.
@@ -141,26 +142,18 @@ export class ToolbarPattern<T extends ToolbarItemPattern> {
    */
   readonly keydown = computed(() => {
     const manager = new KeyboardEventManager();
+
     // Navigation handlers
-    manager.addHandler({key: this.prevKey()}, () => this.prev());
-    manager.addHandler({key: this.nextKey()}, () => this.next());
-    manager.addHandler({key: 'Home'}, () => this.first());
-    manager.addHandler({key: 'End'}, () => this.last());
+    manager
+      .on(this.prevKey(), () => this.prev())
+      .on(this.nextKey(), () => this.next())
+      .on('Home', () => this.first())
+      .on('End', () => this.last());
 
     // Activation handlers
-    const activationHandler = () => {
-      // `untracked` is used because `activeItem` itself is a computed signal.
-      // We only want to react to the keydown event, not changes in `activeItem`.
-      const activeItem = untracked(this.focusManager.activeItem);
-      if (activeItem) {
-        // Ensure the item is fully focused/activated by the navigation manager.
-        this.navigation.goto(activeItem);
-        // Placeholder for actual item activation logic (e.g., click, command execution).
-        console.log(`${event?.key === ' ' ? 'Space' : 'Enter'} pressed on active item:`, activeItem);
-      }
-    };
-    manager.addHandler({key: 'Enter'}, activationHandler);
-    manager.addHandler({key: ' '}, activationHandler); // Space key for activation
+    manager
+      .on('Enter', () => this._activateCurrentItem())
+      .on(' ', () => this._activateCurrentItem()); // Space key for activation
 
     return manager;
   });
@@ -172,11 +165,16 @@ export class ToolbarPattern<T extends ToolbarItemPattern> {
   readonly pointerdown = computed(() => {
     const manager = new PointerEventManager();
     // Handles primary button clicks (typically left mouse button).
-    manager.addHandler({button: 0}, (event: PointerEvent) => {
-      const item = this.goto(event); // Navigates to and focuses the clicked item.
-      if (item) {
-        // Placeholder for actual item activation logic.
-        console.log('Pointer down on item:', item);
+    // Aligns with ListboxPattern's use of `.on` for PointerEventManager.
+    manager.on({button: 0}, (event: PointerEvent) => {
+      // goto will find the item and navigate (focus) to it.
+      // It returns the item if found and navigation occurred.
+      const targetItem = this.goto(event);
+
+      if (targetItem) {
+        // If an item was successfully navigated to, activate it.
+        // _activateCurrentItem will check for disabled state.
+        this._activateCurrentItem();
       }
     });
     return manager;
@@ -234,10 +232,12 @@ export class ToolbarPattern<T extends ToolbarItemPattern> {
       return undefined; // Event target must be an HTMLElement.
     }
 
-    const items = this.items(); // Get current items.
+    const items = this.inputs.items(); // Get current items by invoking the SignalLike function.
     for (const item of items) {
-      // `requireSync: true` because this is in an event handler, expecting immediate value.
-      const itemElement = toSignal(item.element, {requireSync: true});
+      // `requireSync: true` is implicitly handled if item.element() directly returns HTMLElement.
+      // If item.element itself could be a signal, further unwrapping might be needed here,
+      // but aligning with OptionPattern suggests item.element() gives direct value.
+      const itemElement = item.element();
       // Check if the event target is the item's element or a descendant of it.
       if (itemElement === event.target || itemElement.contains(event.target as Node)) {
         return item;
@@ -287,5 +287,26 @@ export class ToolbarPattern<T extends ToolbarItemPattern> {
     // Focus is managed by ListFocus and ListNavigation.
     event.preventDefault();
     this.pointerdown().handle(event); // Delegate to the pointer event manager.
+  }
+
+  /**
+   * Activates the current item.
+   * This typically means performing the item's primary action.
+   * For now, it logs the item and ensures it's focused.
+   */
+  private _activateCurrentItem() {
+    // `untracked` is used because `activeItem` itself is a computed signal.
+    // We only want to react to the event, not changes in `activeItem` that might occur
+    // due to other effects. The item's state at the point of activation is what matters.
+    const activeItem = untracked(this.focusManager.activeItem);
+
+    if (activeItem && !untracked(activeItem.disabled)) {
+      // Ensure the item is fully focused by the navigation manager if it's going to be activated.
+      // This is particularly important if focus might have drifted or if activation implies focus.
+      this.navigation.goto(activeItem);
+
+      // Placeholder for actual item activation logic (e.g., click, command execution, event dispatch).
+      console.log('Item activated:', activeItem);
+    }
   }
 }

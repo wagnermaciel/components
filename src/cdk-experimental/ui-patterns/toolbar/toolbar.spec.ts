@@ -6,9 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {signal, WritableSignal, untracked} from '@angular/core';
+import {signal, WritableSignal} from '@angular/core';
 import {ToolbarPattern, ToolbarItemPattern, ToolbarInputs} from './toolbar';
-// No import for `toSignal` as it's not directly used in the spec file.
+// No import for `untracked` as it's not directly used if item properties are functions.
 // No import for `computed` as it's not directly used in the spec file.
 
 describe('ToolbarPattern', () => {
@@ -29,7 +29,7 @@ describe('ToolbarPattern', () => {
   function createMockItem(
     id: string,
     index: number,
-    isDisabled = false,
+    initialIsDisabled = false,
   ): ToolbarItemPattern {
     const el = document.createElement('div');
     el.id = id;
@@ -39,11 +39,16 @@ describe('ToolbarPattern', () => {
     }
     itemElements[index] = el;
 
+    // Use a mutable variable for disabled state to allow changing it in tests.
+    let isDisabled = initialIsDisabled;
+
     return {
-      element: signal(el),
-      disabled: signal(isDisabled),
-      index: signal(index),
-      id: signal(id),
+      element: () => el,
+      disabled: () => isDisabled,
+      index: () => index,
+      id: () => id,
+      // Helper to change disabled state for testing
+      _setDisabled: (state: boolean) => isDisabled = state,
     };
   }
 
@@ -63,21 +68,35 @@ describe('ToolbarPattern', () => {
     activeIndex = signal(0); // Default active index.
 
     // Define default inputs for the toolbar.
+    // Most SignalLike inputs are provided as functions returning values.
+    // activeIndex remains a WritableSignal.
+    let currentOrientation = 'horizontal';
+    let currentTextDirection = 'ltr';
+    let currentIsDisabled = false;
+    let currentWrap = true;
+    let currentItems = items;
+
     mockInputs = {
-      items: signal(items),
-      orientation: signal('horizontal'),
-      textDirection: signal('ltr'),
-      disabled: signal(false),
-      wrap: signal(true),
-      activeIndex,
+      items: () => currentItems,
+      orientation: () => currentOrientation,
+      textDirection: () => currentTextDirection,
+      disabled: () => currentIsDisabled,
+      wrap: () => currentWrap,
+      activeIndex, // This is a WritableSignal
       // Predicate to determine if an item is considered for focus/navigation.
-      // `untracked` is used to prevent the predicate from depending on item.disabled signal changes
-      // directly, if the list of items itself is not changing.
-      itemPredicate: signal(item => !untracked(item.disabled)),
+      itemPredicate: item => !item.disabled(),
       // Predicate for the list itself (toolbar container). Typically true.
-      listPredicate: signal(_ => true),
+      listPredicate: _ => true,
       ...inputs, // Apply any overrides.
     };
+
+    // Helper to allow tests to change input values for functions
+    (mockInputs as any)._setOrientation = (val: 'horizontal' | 'vertical') => currentOrientation = val;
+    (mockInputs as any)._setDisabled = (val: boolean) => currentIsDisabled = val;
+    (mockInputs as any)._setWrap = (val: boolean) => currentWrap = val;
+    (mockInputs as any)._setItems = (val: ToolbarItemPattern[]) => currentItems = val;
+
+
     toolbar = new ToolbarPattern(mockInputs);
   }
 
@@ -102,14 +121,14 @@ describe('ToolbarPattern', () => {
     });
 
     it('should reflect disabled input state', () => {
-      initializeToolbar({disabled: signal(true)});
+      initializeToolbar({disabled: () => true});
       expect(toolbar.disabled()).toBe(true);
       // ListFocus sets tabindex to -1 if the list is disabled.
       expect(toolbar.tabindex()).toBe(-1, 'Tabindex should be -1 for disabled toolbar');
     });
 
     it('should reflect orientation input', () => {
-      initializeToolbar({orientation: signal('vertical')});
+      initializeToolbar({orientation: () => 'vertical'});
       expect(toolbar.orientation()).toBe('vertical');
     });
 
@@ -119,11 +138,14 @@ describe('ToolbarPattern', () => {
     });
 
     it('should have null activedescendant if active item has no ID or ID is null', () => {
-      const itemsWithoutIds = [
+      const itemsWithoutIds: ToolbarItemPattern[] = [
         createMockItem('item-0', 0), // This item has an ID.
-        {...createMockItem('item-1', 1), id: signal(null)}, // This item's ID is explicitly null.
+        {
+          ...createMockItem('item-1-no-id', 1),
+          id: () => null // This item's ID is explicitly null.
+        } as ToolbarItemPattern,
       ];
-      initializeToolbar({items: signal(itemsWithoutIds), activeIndex: signal(1)});
+      initializeToolbar({items: () => itemsWithoutIds, activeIndex: signal(1)});
       expect(toolbar.activedescendant()).toBeNull();
     });
   });
@@ -134,10 +156,9 @@ describe('ToolbarPattern', () => {
     describe('Horizontal LTR', () => {
       beforeEach(() => {
         initializeToolbar({
-          // Explicitly set for this block, overriding defaults if necessary.
-          orientation: signal('horizontal'), // Default, but explicit for clarity.
-          textDirection: signal('ltr'), // Explicit for this block.
-          wrap: signal(false), // No wrapping for some tests in this block.
+          orientation: () => 'horizontal',
+          textDirection: () => 'ltr',
+          wrap: () => false,
         });
       });
 
@@ -160,8 +181,10 @@ describe('ToolbarPattern', () => {
       });
 
       it('should wrap with ArrowRight at the last enabled item if wrap is true', () => {
-        mockInputs.wrap.set(true);
-        toolbar = new ToolbarPattern(mockInputs); // Re-initialize to apply new wrap setting.
+        // To change wrap, we re-initialize or use the setter on mockInputs
+        (mockInputs as any)._setWrap(true);
+        // Re-initialization is safer if the pattern consumes signals deeply in constructor
+        toolbar = new ToolbarPattern(mockInputs);
         toolbar.activeIndex.set(2); // item-2 is the last enabled.
         toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'ArrowRight'}));
         // Wraps around, skipping disabled item-3, to item-0.
@@ -177,8 +200,8 @@ describe('ToolbarPattern', () => {
       });
 
       it('should skip disabled items and wrap when navigating next (wrap=true)', () => {
-        mockInputs.wrap.set(true);
-        toolbar = new ToolbarPattern(mockInputs); // Re-initialize with wrapping.
+        (mockInputs as any)._setWrap(true);
+        toolbar = new ToolbarPattern(mockInputs);
         toolbar.activeIndex.set(2); // Active is item-2, before disabled item-3.
         toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'ArrowRight'}));
         // Skips item-3 (disabled) and wraps to item-0.
@@ -186,8 +209,8 @@ describe('ToolbarPattern', () => {
       });
 
       it('should skip disabled items when navigating prev (wrap=true)', () => {
-        mockInputs.wrap.set(true);
-        toolbar = new ToolbarPattern(mockInputs); // Re-initialize with wrapping.
+        (mockInputs as any)._setWrap(true);
+        toolbar = new ToolbarPattern(mockInputs);
         toolbar.activeIndex.set(0); // Active is item-0.
         toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'ArrowLeft'}));
         // Skips item-3 (disabled) and lands on item-2 (last enabled).
@@ -199,10 +222,9 @@ describe('ToolbarPattern', () => {
     describe('Horizontal RTL', () => {
       beforeEach(() => {
         initializeToolbar({
-          // Explicitly set for this block.
-          orientation: signal('horizontal'), // Default, but explicit.
-          textDirection: signal('rtl'), // RTL direction.
-          wrap: signal(false), // No wrapping for these tests.
+          orientation: () => 'horizontal',
+          textDirection: () => 'rtl',
+          wrap: () => false,
         });
       });
 
@@ -224,9 +246,8 @@ describe('ToolbarPattern', () => {
     describe('Vertical', () => {
       beforeEach(() => {
         initializeToolbar({
-          // Explicitly set for this block.
-          orientation: signal('vertical'), // Vertical orientation.
-          wrap: signal(false), // No wrapping for these tests.
+          orientation: () => 'vertical',
+          wrap: () => false,
         });
       });
 
@@ -245,8 +266,17 @@ describe('ToolbarPattern', () => {
     // Tests for Home and End key navigation.
     describe('Home/End keys', () => {
       it('should move to the first enabled item with Home key', () => {
-        items[0].disabled.set(true); // Make the first item (item-0) disabled.
-        toolbar = new ToolbarPattern(mockInputs); // Re-initialize with updated item state.
+        (items[0] as any)._setDisabled(true); // Make the first item (item-0) disabled.
+        // No need to re-init toolbar if itemPredicate re-evaluates item.disabled()
+        // and items() input itself hasn't changed identity.
+        // However, ListFocus caches items, so re-init is safer if item list content changes state.
+        // For this test, let's assume itemPredicate is re-evaluated by ListFocus/ListNavigation.
+        // If ListFocus/Navigation internally cache based on item.disabled() at item list set time,
+        // then a full re-init of ToolbarPattern would be needed.
+        // The safest is to re-init if inputs that affect filtering/navigation are changed.
+        toolbar = new ToolbarPattern(mockInputs);
+
+
         toolbar.activeIndex.set(2); // Start from item-2.
         toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'Home'}));
         // item-1 is now the first enabled item.
@@ -264,7 +294,7 @@ describe('ToolbarPattern', () => {
     // Tests navigation behavior when the entire toolbar is disabled.
     describe('Navigation when disabled', () => {
       it('should not navigate when toolbar is disabled', () => {
-        initializeToolbar({disabled: signal(true)}); // Disable the toolbar.
+        initializeToolbar({disabled: () => true}); // Disable the toolbar.
         const initialActiveIndex = toolbar.activeIndex();
         toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'ArrowRight'}));
         // Active index should remain unchanged.
@@ -275,53 +305,72 @@ describe('ToolbarPattern', () => {
 
   // Test suite for item activation behavior (e.g., via Enter, Space, Pointer).
   describe('Item Activation', () => {
-    let consoleSpy: jasmine.Spy; // Spy for console.log to check activation messages.
+    let activateItemSpy: jasmine.Spy;
+    let consoleLogSpy: jasmine.Spy; // To check logs from within _activateCurrentItem
 
     beforeEach(() => {
-      consoleSpy = spyOn(console, 'log');
       // Ensure activeIndex is 0 for these tests, unless specified otherwise.
       initializeToolbar({activeIndex: signal(0)});
+      // Spy on the private method _activateCurrentItem. callThrough allows original method to execute.
+      activateItemSpy = spyOn(toolbar as any, '_activateCurrentItem').and.callThrough();
+      // Spy on console.log to verify the logging within _activateCurrentItem
+      consoleLogSpy = spyOn(console, 'log');
     });
 
-    it('should log and focus on Enter key press', () => {
+    it('should call _activateCurrentItem on Enter key press', () => {
       toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'Enter'}));
-      // Active index should remain 0, goto ensures the item is properly focused.
-      expect(toolbar.activeIndex()).toBe(0);
-      expect(consoleSpy).toHaveBeenCalledWith('Enter pressed on active item:', items[0]);
+      expect(activateItemSpy).toHaveBeenCalledTimes(1);
+      // _activateCurrentItem will log "Item activated:"
+      expect(consoleLogSpy).toHaveBeenCalledWith('Item activated:', items[0]);
+      expect(toolbar.activeIndex()).toBe(0); // Focus should be maintained/set by _activateCurrentItem
     });
 
-    it('should log and focus on Space key press', () => {
+    it('should call _activateCurrentItem on Space key press', () => {
       toolbar.onKeydown(new KeyboardEvent('keydown', {key: ' '}));
+      expect(activateItemSpy).toHaveBeenCalledTimes(1);
+      expect(consoleLogSpy).toHaveBeenCalledWith('Item activated:', items[0]);
       expect(toolbar.activeIndex()).toBe(0);
-      expect(consoleSpy).toHaveBeenCalledWith('Space pressed on active item:', items[0]);
     });
 
-    it('should log, focus, and update activeIndex on pointerdown', () => {
+    it('should call _activateCurrentItem and update activeIndex on pointerdown', () => {
       expect(itemElements[1]).toBeTruthy('Item element for item-1 should exist');
-      // Create a mock PointerEvent that targets the element of items[1].
       const mockPointerEvent = {
         target: itemElements[1], // Target the specific item's element.
         preventDefault: jasmine.createSpy('preventDefault'), // Spy on preventDefault.
         button: 0, // Primary button.
       } as unknown as PointerEvent;
 
+      // Reset spy for this specific test if needed, or ensure it's clean from beforeEach
+      activateItemSpy.calls.reset();
+      consoleLogSpy.calls.reset();
+
       toolbar.onPointerdown(mockPointerEvent);
 
       expect(toolbar.activeIndex()).toBe(1, 'Active index should update to clicked item');
-      expect(consoleSpy).toHaveBeenCalledWith('Pointer down on item:', items[1]);
+      expect(activateItemSpy).toHaveBeenCalledTimes(1);
+      // Check that _activateCurrentItem's internal log was called for the correct item (items[1])
+      expect(consoleLogSpy).toHaveBeenCalledWith('Item activated:', items[1]);
       expect(mockPointerEvent.preventDefault).toHaveBeenCalled();
     });
 
-    it('should not activate disabled items with Enter key', () => {
-      toolbar.activeIndex.set(3); // item-3 is disabled.
+    it('should call _activateCurrentItem but not log if item is disabled (Enter key)', () => {
+      (items[0] as any)._setDisabled(true); // Disable the active item (item-0)
+      toolbar = new ToolbarPattern(mockInputs); // Re-initialize if item state affects focus manager caching
+      activateItemSpy = spyOn(toolbar as any, '_activateCurrentItem').and.callThrough();
+      consoleLogSpy = spyOn(console, 'log');
+
+
       toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'Enter'}));
-      // The activeItem in ToolbarPattern will be undefined for a disabled item,
-      // so the console.log (placeholder action) should not be called.
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(activateItemSpy).toHaveBeenCalledTimes(1);
+      // _activateCurrentItem is called, but its internal log should not happen due to disabled check.
+      expect(consoleLogSpy).not.toHaveBeenCalledWith('Item activated:', items[0]);
     });
 
-    it('should not activate anything if the toolbar is disabled', () => {
-      initializeToolbar({disabled: signal(true)}); // Disable the entire toolbar.
+    it('should not call _activateCurrentItem if the toolbar is disabled', () => {
+      // Re-initialize with toolbar disabled state for this specific test
+      initializeToolbar({disabled: () => true});
+      // Spy after re-initialization
+      activateItemSpy = spyOn(toolbar as any, '_activateCurrentItem').and.callThrough();
 
       // Try keyboard activation.
       toolbar.onKeydown(new KeyboardEvent('keydown', {key: 'Enter'}));
@@ -350,12 +399,12 @@ describe('ToolbarPattern', () => {
     });
 
     it('should have tabindex = 0 if not disabled and an active item exists', () => {
-      initializeToolbar({disabled: signal(false), activeIndex: signal(0)});
+      initializeToolbar({disabled: () => false, activeIndex: signal(0)});
       expect(toolbar.tabindex()).toBe(0);
     });
 
     it('should have tabindex = -1 if toolbar is disabled', () => {
-      initializeToolbar({disabled: signal(true)});
+      initializeToolbar({disabled: () => true});
       expect(toolbar.tabindex()).toBe(-1);
     });
 
