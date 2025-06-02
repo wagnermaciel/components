@@ -35,17 +35,85 @@ export class GridNavigation<T extends GridNavigationCell> {
 
   /** Navigates to the item above the current item. */
   up(): boolean {
-    return false;
+    const colcount = this.inputs.gridFocus.colCount();
+    const rowcount = this.inputs.gridFocus.rowCount();
+
+    const step = ({row, col}: {row: number; col: number}) => {
+      const isRowWrapping = this.inputs.wrap() && row - 1 < 0;
+      const isColumnWrapping = isRowWrapping && this.inputs.wrapBehavior() === 'continuous';
+
+      const nextRow = isRowWrapping ? (row - 1 + rowcount) % rowcount : Math.max(row - 1, 0);
+      const nextCol = isColumnWrapping ? (col - 1 + colcount) % colcount : col;
+
+      return {
+        row: nextRow,
+        col: nextCol,
+      };
+    };
+
+    const startCoordinates = {
+      row: this.inputs.activeCoords().row,
+      col: this.inputs.activeCoords().col,
+    };
+
+    return this._advance(startCoordinates, step);
   }
 
   /** Navigates to the item below the current item. */
   down(): boolean {
-    return false;
+    const colcount = this.inputs.gridFocus.colCount();
+    const rowcount = this.inputs.gridFocus.rowCount();
+
+    const step = ({row, col}: {row: number; col: number}) => {
+      const isRowWrapping = this.inputs.wrap() && row + 1 >= rowcount;
+      const isColumnWrapping = isRowWrapping && this.inputs.wrapBehavior() === 'continuous';
+
+      const nextRow = isRowWrapping ? (row + 1) % rowcount : Math.min(row + 1, rowcount - 1);
+      const nextCol = isColumnWrapping ? (col + 1 + colcount) % colcount : col;
+
+      return {
+        row: nextRow,
+        col: nextCol,
+      };
+    };
+
+    const startCoordinates = {
+      row: this.inputs.activeCoords().row,
+      col: this.inputs.activeCoords().col,
+    };
+
+    return this._advance(startCoordinates, step);
   }
 
   /** Navigates to the item to the left of the current item. */
   left(): boolean {
-    return false;
+    const activeCell = this.inputs.gridFocus.activeCell()!;
+    const colspan = activeCell.colspan();
+    const colcount = this.inputs.gridFocus.colCount();
+    const rowcount = this.inputs.gridFocus.rowCount();
+
+    const step = ({row, col}: {row: number; col: number}) => {
+      const isColumnWrapping = this.inputs.wrap() && col - colspan < 0;
+      const isRowWrapping = isColumnWrapping && this.inputs.wrapBehavior() === 'continuous';
+
+      const nextCol = isColumnWrapping
+        ? (col - colspan + colcount) % colcount
+        : Math.max(col - colspan, 0);
+
+      const nextRow = isRowWrapping ? (row - 1 + rowcount) % rowcount : row;
+
+      return {
+        row: nextRow,
+        col: nextCol,
+      };
+    };
+
+    const startCoordinates = {
+      row: this.inputs.activeCoords().row,
+      col: activeCell.colindex(),
+    };
+
+    return this._advance(startCoordinates, step);
   }
 
   /** Navigates to the item to the right of the current item. */
