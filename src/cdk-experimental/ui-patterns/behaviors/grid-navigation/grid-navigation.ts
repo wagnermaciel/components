@@ -1,24 +1,36 @@
-import {SignalLike, resolveSignalLike} from '../signal-like/signal-like';
-import {ListFocusItem} from '../list-focus/list-focus';
-import {GridFocus} from '../grid-focus/grid-focus'; // GridFocusCellCoordinates removed
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.dev/license
+ */
+
+import {SignalLike} from '../signal-like/signal-like';
+import {GridFocus, GridFocusCell, GridFocusInputs, RowCol} from '../grid-focus/grid-focus';
 
 /** Represents an item in a collection, such as a listbox option, than can be navigated to. */
-export interface GridNavigationItem extends ListFocusItem {}
+export interface GridNavigationCell extends GridFocusCell {}
 
 /** Represents the required inputs for a collection that has navigable items. */
-export interface GridNavigationInputs<T extends GridNavigationItem> {
+export interface GridNavigationInputs<T extends GridNavigationCell> extends GridFocusInputs<T> {
   gridFocus: GridFocus<T>;
-  wrapRows: SignalLike<boolean>;
-  wrapColumns: SignalLike<boolean>;
+  wrap: SignalLike<boolean>;
+  wrapBehavior: SignalLike<'continuous' | 'loop'>;
 }
 
 /** Controls navigation for a grid of items. */
-export class GridNavigation<T extends GridNavigationItem> {
+export class GridNavigation<T extends GridNavigationCell> {
   constructor(readonly inputs: GridNavigationInputs<T>) {}
 
   /** Navigates to the given item. */
-  goto(item?: T): boolean {
-    return item ? this.inputs.gridFocus.focus(item) : false;
+  gotoCell(cell?: T): boolean {
+    return cell ? this.inputs.gridFocus.focusCell(cell) : false;
+  }
+
+  /** Navigates to the given coordinates. */
+  gotoCoords(coords: RowCol): boolean {
+    return this.inputs.gridFocus.focusCoordinates(coords);
   }
 
   /** Navigates to the item above the current item. */
