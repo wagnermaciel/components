@@ -147,7 +147,7 @@ describe('GridFocus', () => {
     });
 
     it('should compute rowCount and colCount correctly', () => {
-      const {gridFocus, cells} = setupGridFocus({
+      const {gridFocus} = setupGridFocus({
         numRows: 2,
         numCols: 3,
       });
