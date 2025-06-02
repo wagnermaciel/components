@@ -50,6 +50,70 @@ export class GridNavigation<T extends GridNavigationCell> {
 
   /** Navigates to the item to the right of the current item. */
   right(): boolean {
-    return false;
+    const activeCell = this.inputs.gridFocus.activeCell()!;
+    const colspan = activeCell.colspan();
+    const colcount = this.inputs.gridFocus.colCount();
+    const rowcount = this.inputs.gridFocus.rowCount();
+
+    const step = ({row, col}: {row: number; col: number}) => {
+      const isColumnWrapping = this.inputs.wrap() && col + colspan >= colcount;
+      const isRowWrapping = isColumnWrapping && this.inputs.wrapBehavior() === 'continuous';
+
+      const nextCol = isColumnWrapping
+        ? (col + colspan + colcount) % colcount
+        : Math.min(col + colspan, colcount - 1);
+
+      const nextRow = isRowWrapping ? (row + 1 + rowcount) % rowcount : row;
+
+      return {
+        row: nextRow,
+        col: nextCol,
+      };
+    };
+
+    const startCoordinates = {
+      row: this.inputs.activeCoords().row,
+      col: activeCell.colindex(),
+    };
+
+    return this._advance(startCoordinates, step);
+  }
+
+  /**
+   * Continuously calls the given stepFn starting at the given coordinates
+   * until either a new focusable cell is reached or the grid fully loops.
+   */
+  private _advance(coords: RowCol, stepFn: (coords: RowCol) => RowCol) {
+    let prevCoords = {row: coords.row, col: coords.col};
+    let nextCoords = {row: coords.row, col: coords.col};
+    let nextCell = this.inputs.gridFocus.activeCell();
+
+    while (true) {
+      prevCoords = {row: nextCoords.row, col: nextCoords.col};
+      nextCoords = stepFn(nextCoords);
+
+      // The step did not result in any change in coordinates.
+      //
+      // This will happen if the user is at a boundary (start/end row or col)
+      // and tries to advance past it while `wrap` is false.
+      if (nextCoords.row === prevCoords.row && nextCoords.col === prevCoords.col) {
+        return false;
+      }
+
+      // The step has resulted in arriving back to the original coordinates.
+      //
+      // This will happen if the other cells in the grid are unfocusable and `wrap`
+      // is true. The `stepFn` will eventually loop all the way back to the original cells.
+      if (nextCoords.row === coords.row && nextCoords.col === coords.col) {
+        return false;
+      }
+
+      nextCell = this.inputs.gridFocus.getCell(nextCoords)!;
+
+      // The `stepFn` has successfully reached a cell that is focusable.
+      if (this.inputs.gridFocus.isFocusable(nextCell)) {
+        return this.gotoCoords(nextCoords);
+      }
+    }
   }
 }
