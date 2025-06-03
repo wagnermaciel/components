@@ -23,7 +23,7 @@ type TestSetupInputs = Partial<GridFocusInputs<TestGridCell>> & {
   gridFocus?: WritableSignal<GridFocus<TestGridCell> | undefined>;
 };
 
-function createTestCell(
+export function createTestCell(
   gridFocus: Signal<GridFocus<TestGridCell> | undefined>,
   opts: {id: string; rowspan?: number; colspan?: number},
 ): TestGridCell {
@@ -45,7 +45,7 @@ function createTestCell(
   return cell;
 }
 
-function createTestCells(
+export function createTestCells(
   gridFocus: Signal<GridFocus<TestGridCell> | undefined>,
   numRows: number,
   numCols: number,
@@ -60,7 +60,7 @@ function createTestCells(
 }
 
 // Main helper function to instantiate GridFocus and its dependencies for testing
-function setupGridFocus(inputs: TestSetupInputs = {}): {
+export function setupGridFocus(inputs: TestSetupInputs = {}): {
   cells: TestGridCell[][];
   gridFocus: GridFocus<TestGridCell>;
 } {
