@@ -22,8 +22,8 @@ export interface GridNavigationInputs<T extends GridNavigationCell> extends Grid
 
 /** Controls navigation for a grid of items. */
 export class GridNavigation<T extends GridNavigationCell> {
-  private rowcount = computed(() => this.inputs.gridFocus.rowCount());
-  private colcount = computed(() => this.inputs.gridFocus.colCount());
+  private _rowcount = computed(() => this.inputs.gridFocus.rowCount());
+  private _colcount = computed(() => this.inputs.gridFocus.colCount());
 
   constructor(readonly inputs: GridNavigationInputs<T>) {}
 
@@ -46,9 +46,9 @@ export class GridNavigation<T extends GridNavigationCell> {
 
       const nextCoords = {
         row: isRowWrapping
-          ? (rowindex - 1 + this.rowcount()) % this.rowcount()
+          ? (rowindex - 1 + this._rowcount()) % this._rowcount()
           : Math.max(rowindex - 1, 0),
-        col: isColumnWrapping ? (col - 1 + this.colcount()) % this.colcount() : col,
+        col: isColumnWrapping ? (col - 1 + this._colcount()) % this._colcount() : col,
       };
 
       const nextCell = this.inputs.gridFocus.getCell(nextCoords)!;
@@ -65,14 +65,14 @@ export class GridNavigation<T extends GridNavigationCell> {
     return this._advance((cell: T, {col}: RowCol) => {
       const rowspan = cell.rowspan();
       const rowindex = cell.rowindex();
-      const isRowWrapping = this.inputs.wrap() && rowindex + rowspan >= this.rowcount();
+      const isRowWrapping = this.inputs.wrap() && rowindex + rowspan >= this._rowcount();
       const isColumnWrapping = isRowWrapping && this.inputs.wrapBehavior() === 'continuous';
 
       return {
         row: isRowWrapping
-          ? (rowindex + rowspan) % this.rowcount()
-          : Math.min(rowindex + rowspan, this.rowcount() - 1),
-        col: isColumnWrapping ? (col + 1 + this.colcount()) % this.colcount() : col,
+          ? (rowindex + rowspan) % this._rowcount()
+          : Math.min(rowindex + rowspan, this._rowcount() - 1),
+        col: isColumnWrapping ? (col + 1 + this._colcount()) % this._colcount() : col,
       };
     });
   }
@@ -85,9 +85,9 @@ export class GridNavigation<T extends GridNavigationCell> {
       const isRowWrapping = isColumnWrapping && this.inputs.wrapBehavior() === 'continuous';
 
       const nextCoords = {
-        row: isRowWrapping ? (row - 1 + this.rowcount()) % this.rowcount() : row,
+        row: isRowWrapping ? (row - 1 + this._rowcount()) % this._rowcount() : row,
         col: isColumnWrapping
-          ? (colindex - 1 + this.colcount()) % this.colcount()
+          ? (colindex - 1 + this._colcount()) % this._colcount()
           : Math.max(colindex - 1, 0),
       };
 
@@ -105,14 +105,14 @@ export class GridNavigation<T extends GridNavigationCell> {
     return this._advance((cell: T, {row}: RowCol) => {
       const colspan = cell.colspan();
       const colindex = cell.colindex();
-      const isColumnWrapping = this.inputs.wrap() && colindex + colspan >= this.colcount();
+      const isColumnWrapping = this.inputs.wrap() && colindex + colspan >= this._colcount();
       const isRowWrapping = isColumnWrapping && this.inputs.wrapBehavior() === 'continuous';
 
       return {
-        row: isRowWrapping ? (row + 1 + this.rowcount()) % this.rowcount() : row,
+        row: isRowWrapping ? (row + 1 + this._rowcount()) % this._rowcount() : row,
         col: isColumnWrapping
-          ? (colindex + colspan + this.colcount()) % this.colcount()
-          : Math.min(colindex + colspan, this.colcount() - 1),
+          ? (colindex + colspan + this._colcount()) % this._colcount()
+          : Math.min(colindex + colspan, this._colcount() - 1),
       };
     });
   }

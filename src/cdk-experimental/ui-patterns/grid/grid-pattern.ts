@@ -6,14 +6,12 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {computed, signal, Signal, WritableSignal} from '@angular/core';
+import {computed, Signal} from '@angular/core';
 import {SignalLike, WritableSignalLike} from '../behaviors/signal-like/signal-like';
 import {GridCellPattern} from './grid-cell';
 import {MockGridPattern} from './grid-types'; // MockGridPattern for self-reference if needed by cells
 import {GridFocus, GridFocusInputs, RowCol} from '../behaviors/grid-focus/grid-focus';
 import {GridNavigation, GridNavigationInputs} from '../behaviors/grid-navigation/grid-navigation';
-// Correct import for ModifierKey
-import {ModifierKey} from '../behaviors/event-manager/event-manager';
 import {KeyboardEventManager} from '../behaviors/event-manager/keyboard-event-manager';
 import {PointerEventManager} from '../behaviors/event-manager/pointer-event-manager';
 
@@ -137,8 +135,8 @@ export class GridPattern implements MockGridPattern {
           const currentCoords = this.activeCoords();
           const targetCell =
             event.ctrlKey || event.metaKey
-              ? this.findFirstFocusableCell()
-              : this.findFirstFocusableInRow(currentCoords.row);
+              ? this._findFirstFocusableCell()
+              : this._findFirstFocusableInRow(currentCoords.row);
 
           if (targetCell) this.navigation.gotoCell(targetCell);
           event.preventDefault();
@@ -149,8 +147,8 @@ export class GridPattern implements MockGridPattern {
           const currentCoords = this.activeCoords();
           const targetCell =
             event.ctrlKey || event.metaKey
-              ? this.findLastFocusableCell()
-              : this.findLastFocusableInRow(currentCoords.row);
+              ? this._findLastFocusableCell()
+              : this._findLastFocusableInRow(currentCoords.row);
 
           if (targetCell) this.navigation.gotoCell(targetCell);
           event.preventDefault();
@@ -160,6 +158,7 @@ export class GridPattern implements MockGridPattern {
     /*.on('PageUp', (event) => {
          if (!activeCellInstance()?.trapsNavigation()) {
           // this.navigation.prevPage();
+
           event.preventDefault();
         }
       })
@@ -173,7 +172,7 @@ export class GridPattern implements MockGridPattern {
   });
 
   // Helper methods for Home/End
-  private findFirstFocusableInRow(rowIndex: number): GridCellPattern | undefined {
+  private _findFirstFocusableInRow(rowIndex: number): GridCellPattern | undefined {
     const rows = this.cells();
     if (rowIndex < 0 || rowIndex >= rows.length) return undefined;
     const rowCells = rows[rowIndex];
@@ -183,7 +182,7 @@ export class GridPattern implements MockGridPattern {
     return undefined;
   }
 
-  private findLastFocusableInRow(rowIndex: number): GridCellPattern | undefined {
+  private _findLastFocusableInRow(rowIndex: number): GridCellPattern | undefined {
     const rows = this.cells();
     if (rowIndex < 0 || rowIndex >= rows.length) return undefined;
     const rowCells = rows[rowIndex];
@@ -193,7 +192,7 @@ export class GridPattern implements MockGridPattern {
     return undefined;
   }
 
-  private findFirstFocusableCell(): GridCellPattern | undefined {
+  private _findFirstFocusableCell(): GridCellPattern | undefined {
     for (const row of this.cells()) {
       for (const cell of row) {
         if (this.focusManager.isFocusable(cell)) return cell;
@@ -202,7 +201,7 @@ export class GridPattern implements MockGridPattern {
     return undefined;
   }
 
-  private findLastFocusableCell(): GridCellPattern | undefined {
+  private _findLastFocusableCell(): GridCellPattern | undefined {
     const rows = this.cells();
     for (let r = rows.length - 1; r >= 0; r--) {
       const rowCells = rows[r];
@@ -239,7 +238,7 @@ export class GridPattern implements MockGridPattern {
   }
 
   setDefaultState(): void {
-    const firstCell = this.findFirstFocusableCell();
+    const firstCell = this._findFirstFocusableCell();
     if (firstCell) {
       const coords = this.focusManager.getCoordinates(firstCell);
       if (coords) {

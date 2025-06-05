@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {computed, signal, Signal} from '@angular/core';
+import {signal, Signal} from '@angular/core';
 import {SignalLike} from '../behaviors/signal-like/signal-like';
 import {MockGridCellPattern} from './grid-types';
 

@@ -10,8 +10,7 @@ import {SignalLike} from '../behaviors/signal-like/signal-like';
 import {GridCellPattern} from './grid-cell';
 // GridFocus and GridNavigation will be imported in files that use them.
 // We need GridFocusCell definition for MockGridPattern if it exposes focusManager directly.
-import {GridFocusCell, RowCol} from '../behaviors/grid-focus/grid-focus';
-import {GridFocus} from '../behaviors/grid-focus/grid-focus';
+import {RowCol, GridFocus} from '../behaviors/grid-focus/grid-focus';
 import {GridNavigation} from '../behaviors/grid-navigation/grid-navigation';
 
 /** Represents the properties exposed by a GridPattern that GridCellPattern needs to access. */
