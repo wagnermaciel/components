@@ -1,0 +1,38 @@
+load("//tools:defaults.bzl", "ts_project")
+
+package(default_visibility = ["//visibility:public"])
+
+ts_project(
+    name = "grid_ui_pattern",  # Changed name
+    srcs = glob(
+        ["**/*.ts"],
+        exclude = ["**/*.spec.ts"],  # Exclude spec files if any were created
+    ),
+    deps = [
+        "//:node_modules/@angular/core",
+        "//src/cdk-experimental/ui-patterns/behaviors/event-manager",
+        "//src/cdk-experimental/ui-patterns/behaviors/grid-focus",
+        "//src/cdk-experimental/ui-patterns/behaviors/grid-navigation",
+        "//src/cdk-experimental/ui-patterns/behaviors/signal-like",
+        # Add other direct dependencies if GridCellWidgetPattern or GridCellPattern end up using them
+    ],
+)
+
+# Placeholder for test sources, similar to listbox
+# ts_project(
+#     name = "unit_test_sources",
+#     testonly = True,
+#     srcs = glob(["**/*.spec.ts"]),
+#     deps = [
+#         ":grid_ui_pattern",
+#         "//:node_modules/@angular/core",
+#         "//src/cdk/keycodes", # Common dependency for tests
+#         "//src/cdk/testing/private", # Common dependency for tests
+#     ],
+# )
+
+# Placeholder for test suite
+# ng_web_test_suite(
+#     name = "unit_tests",
+#     deps = [":unit_test_sources"],
+# )
