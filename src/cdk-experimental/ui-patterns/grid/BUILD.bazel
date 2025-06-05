@@ -1,12 +1,12 @@
-load("//tools:defaults.bzl", "ts_project")
+load("//tools:defaults.bzl", "ng_web_test_suite", "ts_project")  # Added ng_web_test_suite
 
 package(default_visibility = ["//visibility:public"])
 
 ts_project(
-    name = "grid_ui_pattern",  # Changed name
+    name = "grid_ui_pattern",
     srcs = glob(
         ["**/*.ts"],
-        exclude = ["**/*.spec.ts"],  # Exclude spec files if any were created
+        exclude = ["**/*.spec.ts"],
     ),
     deps = [
         "//:node_modules/@angular/core",
@@ -18,21 +18,22 @@ ts_project(
     ],
 )
 
-# Placeholder for test sources, similar to listbox
-# ts_project(
-#     name = "unit_test_sources",
-#     testonly = True,
-#     srcs = glob(["**/*.spec.ts"]),
-#     deps = [
-#         ":grid_ui_pattern",
-#         "//:node_modules/@angular/core",
-#         "//src/cdk/keycodes", # Common dependency for tests
-#         "//src/cdk/testing/private", # Common dependency for tests
-#     ],
-# )
+ts_project(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(["**/*.spec.ts"]),
+    deps = [
+        ":grid_ui_pattern",
+        "//:node_modules/@angular/core",
+        "//src/cdk-experimental/ui-patterns/behaviors/grid-focus",  # For RowCol in spec
+        "//src/cdk-experimental/ui-patterns/behaviors/signal-like",  # For SignalLike, WritableSignalLike in spec
+        "//src/cdk/keycodes",  # Common testing dependency
+        "//src/cdk/testing",  # For ModifierKeys
+        "//src/cdk/testing/private",  # For createKeyboardEvent
+    ],
+)
 
-# Placeholder for test suite
-# ng_web_test_suite(
-#     name = "unit_tests",
-#     deps = [":unit_test_sources"],
-# )
+ng_web_test_suite(
+    name = "unit_tests",
+    deps = [":unit_test_sources"],
+)
