@@ -16,8 +16,7 @@ export interface GridSelectionItem<V> extends GridFocusCell {
 }
 
 /** Represents the required inputs for a grid that contains selectable cells. */
-export interface GridSelectionInputs<T extends GridSelectionItem<V>, V>
-  extends GridFocusInputs<T> {
+export interface GridSelectionInputs<T extends GridSelectionItem<V>, V> extends GridFocusInputs<T> {
   /** Whether multiple cells in the grid can be selected at once. */
   multi: SignalLike<boolean>;
 
@@ -46,8 +45,7 @@ export interface GridSelectionItem<V> extends GridFocusCell {
 }
 
 /** Represents the required inputs for a grid that contains selectable cells. */
-export interface GridSelectionInputs<T extends GridSelectionItem<V>, V>
-  extends GridFocusInputs<T> {
+export interface GridSelectionInputs<T extends GridSelectionItem<V>, V> extends GridFocusInputs<T> {
   /** Whether multiple cells in the grid can be selected at once. */
   multi: SignalLike<boolean>;
 
@@ -137,12 +135,12 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
       // The deselect method itself will handle disabled checks if needed,
       // but here we are simply removing any existing value from the selection.
       if (!item.disabled() && this.inputs.value().includes(item.value())) {
-         this.inputs.value.update(values => values.filter(v => v !== item.value()));
+        this.inputs.value.update(values => values.filter(v => v !== item.value()));
       }
     }
-     // After deselecting all, clear the selection value array directly for robustness
+    // After deselecting all, clear the selection value array directly for robustness
     if (this.inputs.value().length > 0) {
-        this.inputs.value.set([]);
+      this.inputs.value.set([]);
     }
   }
 
@@ -159,10 +157,11 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
   /** Marks the given coordinates as the start of a range selection. */
   beginRangeSelection(coords?: RowCol) {
     coords = coords ?? this.inputs.activeCoords();
-    if (!coords) { // activeCoords might be null if grid is empty or no focus yet
-        this.rangeStartCoords.set(null);
-        this.rangeEndCoords.set(null);
-        return;
+    if (!coords) {
+      // activeCoords might be null if grid is empty or no focus yet
+      this.rangeStartCoords.set(null);
+      this.rangeEndCoords.set(null);
+      return;
     }
     this.rangeStartCoords.set(coords);
     this.rangeEndCoords.set(coords); // Initially, start and end are the same.
@@ -197,7 +196,9 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
       // For lastCoords, we need to find the item that would be last in a flattened list.
       // This might be tricky with colspans/rowspans if we want true visual last.
       // Let's use the last item in the focusableItems array for simplicity.
-      const lastCoords = this.inputs.focusManager.getCoordinates(focusableItems[focusableItems.length - 1]);
+      const lastCoords = this.inputs.focusManager.getCoordinates(
+        focusableItems[focusableItems.length - 1],
+      );
 
       if (firstCoords) this.rangeStartCoords.set(firstCoords);
       if (lastCoords) this.rangeEndCoords.set(lastCoords);
@@ -221,12 +222,15 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
       return;
     }
 
-    const selectableItemValues = this.inputs.cells()
+    const selectableItemValues = this.inputs
+      .cells()
       .flat() // Flatten the 2D array of cells
       .filter(item => !item.disabled())
       .map(item => item.value());
 
-    const allSelected = selectableItemValues.every(itemValue => this.inputs.value().includes(itemValue));
+    const allSelected = selectableItemValues.every(itemValue =>
+      this.inputs.value().includes(itemValue),
+    );
 
     allSelected ? this.deselectAll() : this.selectAll();
   }
@@ -306,24 +310,26 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
     // A more direct way: iterate through all defined cells and check if they overlap with the rectangle.
 
     allCells.flat().forEach(cell => {
-        // Get the canonical start coordinates of the current cell
-        const cellStartRow = cell.rowindex();
-        const cellStartCol = cell.colindex();
-        // Get the end coordinates of the current cell based on rowspan/colspan
-        const cellEndRow = cellStartRow + cell.rowspan() - 1;
-        const cellEndCol = cellStartCol + cell.colspan() - 1;
+      // Get the canonical start coordinates of the current cell
+      const cellStartRow = cell.rowindex();
+      const cellStartCol = cell.colindex();
+      // Get the end coordinates of the current cell based on rowspan/colspan
+      const cellEndRow = cellStartRow + cell.rowspan() - 1;
+      const cellEndCol = cellStartCol + cell.colspan() - 1;
 
-        // Check for overlap between the cell's area and the selection rectangle
-        const overlaps =
-            cellStartRow <= maxRow && cellEndRow >= minRow &&
-            cellStartCol <= maxCol && cellEndCol >= minCol;
+      // Check for overlap between the cell's area and the selection rectangle
+      const overlaps =
+        cellStartRow <= maxRow &&
+        cellEndRow >= minRow &&
+        cellStartCol <= maxCol &&
+        cellEndCol >= minCol;
 
-        if (overlaps && !cell.disabled()) {
-            itemsInRect.add(cell);
-        }
+      if (overlaps && !cell.disabled()) {
+        itemsInRect.add(cell);
+      }
     });
 
     return Array.from(itemsInRect);
   }
-// End of GridSelection class
+  // End of GridSelection class
 }
