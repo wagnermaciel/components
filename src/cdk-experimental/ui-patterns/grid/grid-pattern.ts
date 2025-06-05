@@ -79,7 +79,7 @@ export class GridPattern implements MockGridPattern {
   }
 
   // Method for MockGridPattern
-  getCellFromCoords(coords: RowCol): GridCellPattern | undefined {
+  getCellFromCoords(coords: RowCol): GridCellPattern | void {
     return this.focusManager.getCell(coords);
   }
 
@@ -91,9 +91,8 @@ export class GridPattern implements MockGridPattern {
   readonly keydown = computed(() => {
     const manager = new KeyboardEventManager();
     const activeCellInstance = computed<GridCellPattern | undefined>(() => {
-      // Force cast to bypass potential stale type checking or complex inference
-      const cell = this.focusManager.activeCell() as any;
-      return cell as GridCellPattern | undefined;
+      const cell = this.focusManager.activeCell();
+      return cell === undefined ? undefined : cell;
     });
 
     // Navigation keys

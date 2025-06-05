@@ -24,7 +24,7 @@ export interface MockGridPattern {
   orientation: SignalLike<'vertical' | 'horizontal'>;
   // activeCoords might be more relevant than activeCellIndex for a cell to know its state
   activeCoords: SignalLike<RowCol>;
-  getCellFromCoords(coords: RowCol): GridCellPattern | undefined;
+  getCellFromCoords(coords: RowCol): GridCellPattern | void;
 }
 
 /** Represents the properties exposed by a GridCellPattern that GridCellWidgetPattern needs to access. */
