@@ -7,201 +7,271 @@
  */
 
 import {computed, signal, Signal, WritableSignal} from '@angular/core';
-import {SignalLike} from '../behaviors/signal-like/signal-like';
+import {SignalLike, WritableSignalLike} from '../behaviors/signal-like/signal-like';
 import {GridCellPattern} from './grid-cell';
-import {GridFocusInputs, GridNavigationInputs, MockGridPattern} from './grid-types';
-import {GridFocus} from '../behaviors/grid-focus/grid-focus';
-import {GridNavigation} from '../behaviors/grid-navigation/grid-navigation';
-import {KeyboardEventManager, ModifierKey as ModKey} from '../behaviors/event-manager/keyboard-event-manager';
+import {MockGridPattern} from './grid-types'; // MockGridPattern for self-reference if needed by cells
+import {GridFocus, GridFocusInputs, RowCol} from '../behaviors/grid-focus/grid-focus';
+import {GridNavigation, GridNavigationInputs} from '../behaviors/grid-navigation/grid-navigation';
+// Correct import for ModifierKey
+import {ModifierKey} from '../behaviors/event-manager/event-manager';
+import {KeyboardEventManager} from '../behaviors/event-manager/keyboard-event-manager';
 import {PointerEventManager} from '../behaviors/event-manager/pointer-event-manager';
 
 /** Inputs for a GridPattern. */
-export interface GridInputs extends GridFocusInputs<GridCellPattern>, GridNavigationInputs<GridCellPattern> {
-  /** Whether the grid is readonly. */
-  readonly: SignalLike<boolean>;
+// These inputs are now closer to what GridFocusInputs and GridNavigationInputs expect.
+export interface GridInputs {
+  // From GridFocusInputs
+  focusMode: SignalLike<'roving' | 'activedescendant'>;
+  disabled: SignalLike<boolean>;
+  cells: SignalLike<GridCellPattern[][]>; // Changed to 2D array
+  activeCoords: WritableSignalLike<RowCol>; // Changed from activeIndex
+  skipDisabled: SignalLike<boolean>;
 
-  // orientation, items, activeIndex, wrap, textDirection, disabled are
-  // already part of GridFocusInputs and GridNavigationInputs
+  // From GridNavigationInputs (excluding those already in GridFocusInputs)
+  wrap: SignalLike<boolean>;
+  wrapBehavior: SignalLike<'continuous' | 'loop'>;
+
+  // GridPattern specific
+  readonly: SignalLike<boolean>;
+  orientation: SignalLike<'vertical' | 'horizontal'>; // Still relevant for GridPattern logic potentially
+  // textDirection is implicitly handled by LTR/RTL for key names, but GridNavigation might need it if it has text-direction sensitive logic
+  textDirection?: SignalLike<'ltr' | 'rtl'>;
 }
 
 /** Represents the state and behavior of a grid UI pattern. */
+// Implement MockGridPattern for cells to reference this GridPattern instance if needed.
 export class GridPattern implements MockGridPattern {
-  /** Controls focus management for the grid. */
   readonly focusManager: GridFocus<GridCellPattern>;
-
-  /** Controls keyboard navigation for the grid. */
   readonly navigation: GridNavigation<GridCellPattern>;
 
-  /** Whether the grid is readonly. */
   readonly readonly: SignalLike<boolean>;
-
-  /** Orientation of the grid. */
   readonly orientation: SignalLike<'vertical' | 'horizontal'>;
-
-  /** The items (cells) in the grid. */
-  readonly items: SignalLike<GridCellPattern[]>;
-
-  /** The index of the currently active cell. */
-  readonly activeCellIndex: WritableSignal<number>; // from ListFocusInputs
-
-  /** Whether navigation should wrap around the grid. */
-  readonly wrap: SignalLike<boolean>; // from ListNavigationInputs
-
-  /** The text direction of the grid. */
-  readonly textDirection: SignalLike<'ltr' | 'rtl'>; // from ListNavigationInputs
-
-  /** Whether the grid is disabled. */
-  readonly disabled: Signal<boolean>; // from ListFocusInputs (isListDisabled)
+  readonly cells: SignalLike<GridCellPattern[][]>;
+  readonly activeCoords: WritableSignalLike<RowCol>;
+  readonly disabled: SignalLike<boolean>; // This will now be inputs.disabled
 
   constructor(readonly inputs: GridInputs) {
     this.readonly = inputs.readonly;
     this.orientation = inputs.orientation;
-    this.items = inputs.items;
-    this.activeCellIndex = inputs.activeIndex; // Ensure this is writable from inputs
-    this.wrap = inputs.wrap;
-    this.textDirection = inputs.textDirection;
+    this.cells = inputs.cells;
+    this.activeCoords = inputs.activeCoords;
+    this.disabled = inputs.disabled;
 
-    // Initialize behaviors
-    // It's important that `this` is correctly typed for the behaviors if they need to call back
-    // into `GridPattern` or access its specific properties beyond what base inputs provide.
-    // For now, we assume inputs are sufficient.
-    this.focusManager = new GridFocus(inputs);
-    this.navigation = new GridNavigation(inputs);
+    // Prepare inputs for behaviors
+    const gridFocusInputs: GridFocusInputs<GridCellPattern> = {
+      focusMode: inputs.focusMode,
+      disabled: inputs.disabled,
+      cells: inputs.cells,
+      activeCoords: inputs.activeCoords,
+      skipDisabled: inputs.skipDisabled,
+    };
+    this.focusManager = new GridFocus(gridFocusInputs);
 
-    this.disabled = this.focusManager.isListDisabled;
+    const gridNavigationInputs: GridNavigationInputs<GridCellPattern> = {
+      ...gridFocusInputs, // Spread all focus inputs
+      gridFocus: this.focusManager,
+      wrap: inputs.wrap,
+      wrapBehavior: inputs.wrapBehavior,
+      // textDirection can be passed if GridNavigation supports it
+      // textDirection: inputs.textDirection,
+    };
+    this.navigation = new GridNavigation(gridNavigationInputs);
   }
 
-  /** The tabindex of the grid container. */
-  readonly tabindex: Signal<number> = computed(() => this.focusManager.getListTabindex());
+  // Method for MockGridPattern
+  getCellFromCoords(coords: RowCol): GridCellPattern | undefined {
+    return this.focusManager.getCell(coords);
+  }
 
-  /** The ID of the currently active descendant (active cell). */
+  readonly tabindex: Signal<number> = computed(() => this.focusManager.getGridTabindex());
   readonly activedescendant: Signal<string | undefined> = computed(() =>
     this.focusManager.getActiveDescendant(),
   );
 
-  /** Keyboard event manager for the grid. */
   readonly keydown = computed(() => {
     const manager = new KeyboardEventManager();
-    const activeCell = computed(() => this.focusManager.activeItem());
+    const activeCellInstance = computed<GridCellPattern | undefined>(() => {
+      // Force cast to bypass potential stale type checking or complex inference
+      const cell = this.focusManager.activeCell() as any;
+      return cell as GridCellPattern | undefined;
+    });
 
     // Navigation keys
-    const prevRowKey = 'ArrowUp';
-    const nextRowKey = 'ArrowDown';
-    const prevColKey = 'ArrowLeft';
-    const nextColKey = 'ArrowRight';
+    // const isVertical = computed(() => this.orientation() === 'vertical'); // Not directly used for key names now
+    const isRtl = computed(() => this.inputs.textDirection?.() === 'rtl');
+
+    // Define keys based on orientation and textDirection
+    const upKey = 'ArrowUp';
+    const downKey = 'ArrowDown';
+    const leftKey = computed(() => (isRtl() ? 'ArrowRight' : 'ArrowLeft'));
+    const rightKey = computed(() => (isRtl() ? 'ArrowLeft' : 'ArrowRight'));
 
     manager
-      .on(prevRowKey, (event) => {
-        if (!activeCell()?.trapsNavigation()) {
-          this.navigation.prevRow();
-          event.preventDefault(); // Prevent scrolling
-        }
-      })
-      .on(nextRowKey, (event) => {
-        if (!activeCell()?.trapsNavigation()) {
-          this.navigation.nextRow();
+      .on(upKey, event => {
+        if (!activeCellInstance()?.trapsNavigation()) {
+          this.navigation.up();
           event.preventDefault();
         }
       })
-      .on(prevColKey, (event) => {
-        if (!activeCell()?.trapsNavigation()) {
-          this.navigation.prevCol();
+      .on(downKey, event => {
+        if (!activeCellInstance()?.trapsNavigation()) {
+          this.navigation.down();
           event.preventDefault();
         }
       })
-      .on(nextColKey, (event) => {
-        if (!activeCell()?.trapsNavigation()) {
-          this.navigation.nextCol();
+      .on(leftKey, event => {
+        // Use computed key
+        if (!activeCellInstance()?.trapsNavigation()) {
+          this.navigation.left();
           event.preventDefault();
         }
       })
-      .on('Home', (event) => {
-        if (!activeCell()?.trapsNavigation()) {
-          event.ctrlKey || event.metaKey ? this.navigation.firstCell() : this.navigation.firstCellInRow();
+      .on(rightKey, event => {
+        // Use computed key
+        if (!activeCellInstance()?.trapsNavigation()) {
+          this.navigation.right();
           event.preventDefault();
         }
       })
-      .on('End', (event) => {
-        if (!activeCell()?.trapsNavigation()) {
-          event.ctrlKey || event.metaKey ? this.navigation.lastCell() : this.navigation.lastCellInRow();
+      .on('Home', event => {
+        if (!activeCellInstance()?.trapsNavigation()) {
+          const currentCoords = this.activeCoords();
+          const targetCell =
+            event.ctrlKey || event.metaKey
+              ? this.findFirstFocusableCell()
+              : this.findFirstFocusableInRow(currentCoords.row);
+
+          if (targetCell) this.navigation.gotoCell(targetCell);
           event.preventDefault();
         }
       })
-      .on('PageUp', (event) => {
-         if (!activeCell()?.trapsNavigation()) {
-          this.navigation.prevPage(); // Assuming GridNavigation will have this
+      .on('End', event => {
+        if (!activeCellInstance()?.trapsNavigation()) {
+          const currentCoords = this.activeCoords();
+          const targetCell =
+            event.ctrlKey || event.metaKey
+              ? this.findLastFocusableCell()
+              : this.findLastFocusableInRow(currentCoords.row);
+
+          if (targetCell) this.navigation.gotoCell(targetCell);
+          event.preventDefault();
+        }
+      });
+    // PageUp/PageDown commented out for skeleton
+    /*.on('PageUp', (event) => {
+         if (!activeCellInstance()?.trapsNavigation()) {
+          // this.navigation.prevPage();
           event.preventDefault();
         }
       })
       .on('PageDown', (event) => {
-        if (!activeCell()?.trapsNavigation()) {
-          this.navigation.nextPage(); // Assuming GridNavigation will have this
+        if (!activeCellInstance()?.trapsNavigation()) {
+          // this.navigation.nextPage();
           event.preventDefault();
         }
-      });
-
-    // Add more keybindings as needed, e.g., for selection if/when that's added.
-    // Consider read-only state: if (this.readonly()) { ... }
+      });*/
     return manager;
   });
 
-  /** Pointer event manager for the grid. */
+  // Helper methods for Home/End
+  private findFirstFocusableInRow(rowIndex: number): GridCellPattern | undefined {
+    const rows = this.cells();
+    if (rowIndex < 0 || rowIndex >= rows.length) return undefined;
+    const rowCells = rows[rowIndex];
+    for (const cell of rowCells) {
+      if (this.focusManager.isFocusable(cell)) return cell;
+    }
+    return undefined;
+  }
+
+  private findLastFocusableInRow(rowIndex: number): GridCellPattern | undefined {
+    const rows = this.cells();
+    if (rowIndex < 0 || rowIndex >= rows.length) return undefined;
+    const rowCells = rows[rowIndex];
+    for (let i = rowCells.length - 1; i >= 0; i--) {
+      if (this.focusManager.isFocusable(rowCells[i])) return rowCells[i];
+    }
+    return undefined;
+  }
+
+  private findFirstFocusableCell(): GridCellPattern | undefined {
+    for (const row of this.cells()) {
+      for (const cell of row) {
+        if (this.focusManager.isFocusable(cell)) return cell;
+      }
+    }
+    return undefined;
+  }
+
+  private findLastFocusableCell(): GridCellPattern | undefined {
+    const rows = this.cells();
+    for (let r = rows.length - 1; r >= 0; r--) {
+      const rowCells = rows[r];
+      for (let c = rowCells.length - 1; c >= 0; c--) {
+        if (this.focusManager.isFocusable(rowCells[c])) return rowCells[c];
+      }
+    }
+    return undefined;
+  }
+
   readonly pointerdown = computed(() => {
     const manager = new PointerEventManager();
     manager.on((event: PointerEvent) => {
       const targetCell = this._getCellFromEvent(event);
       if (targetCell && !targetCell.disabled() && !this.readonly()) {
         this.navigation.gotoCell(targetCell);
-        // Potentially focus the cell or a widget within it.
-        // For now, navigation.gotoCell updates activeIndex, which focusManager uses.
       }
     });
     return manager;
   });
 
-  /** Handles keydown events on the grid container. */
   onKeydown(event: KeyboardEvent): void {
     if (!this.disabled()) {
+      // direct use of signal
       this.keydown().handle(event);
     }
   }
 
-  /** Handles pointerdown events on the grid container. */
   onPointerdown(event: PointerEvent): void {
     if (!this.disabled()) {
+      // direct use of signal
       this.pointerdown().handle(event);
     }
   }
 
-  /** Sets the initial state of the grid, typically focusing the first available cell. */
   setDefaultState(): void {
-    // GridFocus's constructor or an init method should handle setting initial activeIndex.
-    // This might involve finding the first non-disabled cell.
-    // For now, we assume GridFocus handles this based on its inputs.
-    // If GridFocus needs an explicit call:
-    // this.focusManager.setInitialActiveItem();
-    // Or, more directly if activeIndex is managed here:
-    let firstFocusableIndex = -1;
-    const items = this.items();
-    for (let i = 0; i < items.length; i++) {
-      if (!items[i].disabled()) {
-        firstFocusableIndex = i;
-        break;
+    const firstCell = this.findFirstFocusableCell();
+    if (firstCell) {
+      const coords = this.focusManager.getCoordinates(firstCell);
+      if (coords) {
+        this.activeCoords.set(coords);
       }
+    } else if (this.cells().length > 0 && this.cells()[0].length > 0) {
+      // If no focusable cell, set to {0,0} if grid is not empty
+      this.activeCoords.set({row: 0, col: 0});
     }
-    if (firstFocusableIndex !== -1) {
-      this.activeCellIndex.set(firstFocusableIndex);
-    }
+    // If grid is empty, activeCoords remains as initialized (presumably by consumer or default signal value)
   }
 
   private _getCellFromEvent(event: PointerEvent): GridCellPattern | undefined {
     if (!(event.target instanceof HTMLElement)) {
       return undefined;
     }
-    const cellElement = event.target.closest('[role="gridcell"]'); // Assuming cells have role="gridcell"
+    // Role might be on a child element, so search up to the cell.
+    const cellElement = (event.target as HTMLElement).closest(
+      '[role="gridcell"]',
+    ) as HTMLElement | null;
     if (!cellElement) {
       return undefined;
     }
-    return this.items().find(cell => cell.element() === cellElement);
+    // Find cell by element reference
+    for (const row of this.cells()) {
+      for (const cell of row) {
+        if (cell.element() === cellElement) {
+          return cell;
+        }
+      }
+    }
+    return undefined;
   }
 }
