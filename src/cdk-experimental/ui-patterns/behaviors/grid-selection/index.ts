@@ -6,5 +6,4 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-export * from './public-api';
-export * from './behaviors';
+export * from './grid-selection';
