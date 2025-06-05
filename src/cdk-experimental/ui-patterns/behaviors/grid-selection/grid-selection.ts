@@ -5,38 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.dev/license
  */
-
+import {signal} from '@angular/core'; // Ensure computed is imported if used
 import {SignalLike, WritableSignalLike} from '../signal-like/signal-like';
-import {GridFocusCell, GridFocusInputs, RowCol} from '../grid-focus/grid-focus';
-
-/** Represents a cell in a grid that can be selected. */
-export interface GridSelectionItem<V> extends GridFocusCell {
-  /** The value of the item. */
-  value: SignalLike<V>;
-}
-
-/** Represents the required inputs for a grid that contains selectable cells. */
-export interface GridSelectionInputs<T extends GridSelectionItem<V>, V> extends GridFocusInputs<T> {
-  /** Whether multiple cells in the grid can be selected at once. */
-  multi: SignalLike<boolean>;
-
-  /** The current value of the grid selection (an array of the selected item values). */
-  value: WritableSignalLike<V[]>;
-
-  /** The selection strategy used by the grid. */
-  selectionMode: SignalLike<'follow' | 'explicit'>;
-
-  // Properties from GridFocusInputs<T> are inherited:
-  // focusMode: SignalLike<'roving' | 'activedescendant'>;
-  // disabled: SignalLike<boolean>;
-  // cells: SignalLike<T[][]>; // T is now GridSelectionItem<V>
-  // activeCoords: WritableSignalLike<RowCol>;
-  // skipDisabled: SignalLike<boolean>;
-}
-
-import {signal, Signal, computed} from '@angular/core'; // Ensure computed is imported if used
-import {SignalLike, WritableSignalLike} from '../signal-like/signal-like';
-import {GridFocusCell, GridFocusInputs, GridFocus, RowCol} from '../grid-focus/grid-focus';
+import {GridFocus, GridFocusCell, GridFocusInputs, RowCol} from '../grid-focus/grid-focus';
 
 /** Represents a cell in a grid that can be selected. */
 export interface GridSelectionItem<V> extends GridFocusCell {
@@ -67,8 +38,8 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
   constructor(readonly inputs: GridSelectionInputs<T, V> & {focusManager: GridFocus<T>}) {}
 
   /** Selects the item at the current active coordinates. */
-  select(item?: GridSelectionItem<V>, opts = {anchor: true}) {
-    item = item ?? (this.inputs.focusManager.activeCell() as GridSelectionItem<V>);
+  select(item?: T, opts = {anchor: true}) {
+    item = item ?? this.inputs.focusManager.activeCell();
 
     if (!item || item.disabled() || this.inputs.value().includes(item.value())) {
       return;
@@ -99,7 +70,7 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
 
   /** Toggles selection for the item at the current active coordinates. */
   toggle() {
-    const item = this.inputs.focusManager.activeCell() as GridSelectionItem<V>;
+    const item = this.inputs.focusManager.activeCell();
     if (!item) return;
 
     this.inputs.value().includes(item.value()) ? this.deselect(item) : this.select(item);
@@ -107,7 +78,7 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
 
   /** Toggles only the item at the current active coordinates (selects it if not selected, deselects if selected). */
   toggleOne() {
-    const item = this.inputs.focusManager.activeCell() as GridSelectionItem<V>;
+    const item = this.inputs.focusManager.activeCell();
     if (!item) return;
 
     if (this.inputs.value().includes(item.value())) {
@@ -146,7 +117,7 @@ export class GridSelection<T extends GridSelectionItem<V>, V> {
 
   /** Sets the selection to only the current active item. */
   selectOne() {
-    const item = this.inputs.focusManager.activeCell() as GridSelectionItem<V>;
+    const item = this.inputs.focusManager.activeCell();
     if (!item) return;
 
     this.deselectAll();
