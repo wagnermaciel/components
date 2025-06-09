@@ -197,7 +197,7 @@ function setupGridPattern(
  * │ 2,0 │ 2,1 │ 2,2 │
  * └─────┴─────┴─────┘
  */
-const gridAData: TestGridCellConfig[][] = [
+const gridA: TestGridCellConfig[][] = [
   [{}, {}, {}],
   [{}, {}, {}],
   [{}, {}, {}],
@@ -215,7 +215,7 @@ const gridAData: TestGridCellConfig[][] = [
  * │     │ 3,1 │ 3,2 │
  * └─────┴─────┴─────┘
  */
-const gridBData: TestGridCellConfig[][] = [
+const gridB: TestGridCellConfig[][] = [
   [{}, {}, {rowspan: 2}],
   [{}, {rowspan: 2}],
   [{rowspan: 2}, {}],
@@ -232,7 +232,7 @@ const gridBData: TestGridCellConfig[][] = [
  * │ 2,0 │ 2,1 │ 2,2       │ (2,2 colspan:2)
  * └─────┴─────┴───────────┘
  */
-const gridCData: TestGridCellConfig[][] = [
+const gridC: TestGridCellConfig[][] = [
   [{colspan: 2}, {}, {}],
   [{}, {colspan: 2}, {}],
   [{}, {}, {colspan: 2}],
@@ -258,7 +258,7 @@ const gridCData: TestGridCellConfig[][] = [
  * │ d30 │ d31 │ d32       │ (d32 colspan:2)
  * └─────┴─────┴───────────┘
  */
-const gridDDataFinal: TestGridCellConfig[][] = [
+const gridD: TestGridCellConfig[][] = [
   [{id: 'd00', rowspan: 2}, {id: 'd01', colspan: 2}, {id: 'd03'}], // Row 0
   [
     {id: 'd11', rowspan: 2, colspan: 2},
@@ -278,7 +278,7 @@ const trapsNavGridData: TestGridCellConfig[][] = [
 describe('GridPattern (New Setup)', () => {
   describe('#setDefaultState', () => {
     it('should set activeCoords to the first cell {0,0} if it is focusable', () => {
-      const {grid, activeCoordsSignal} = setupGridPattern(gridAData); // Use gridAData
+      const {grid, activeCoordsSignal} = setupGridPattern(gridA); // Use gridA
       // Ensure activeCoords is something else before the call
       activeCoordsSignal.set({row: -1, col: -1});
       grid.setDefaultState();
@@ -339,10 +339,10 @@ describe('GridPattern (New Setup)', () => {
   describe('Initial Properties (after setDefaultState)', () => {
     it('should have tabindex = 0 for default (roving) focus mode if not disabled', () => {
       const {grid} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {
-          // Use gridAData
+          // Use gridA
           focusMode: signal('roving'),
           disabled: signal(false),
         },
@@ -353,10 +353,10 @@ describe('GridPattern (New Setup)', () => {
 
     it('should have tabindex = 0 for activedescendant focus mode if not disabled', () => {
       const {grid} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {
-          // Use gridAData
+          // Use gridA
           focusMode: signal('activedescendant'),
           disabled: signal(false),
         },
@@ -367,10 +367,10 @@ describe('GridPattern (New Setup)', () => {
 
     it('should have tabindex = 0 when grid input disabled is true', () => {
       const {grid} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {
-          // Use gridAData
+          // Use gridA
           disabled: signal(true),
         },
       );
@@ -379,7 +379,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should have activedescendant undefined for roving focus mode', () => {
-      const {grid} = setupGridPattern(gridAData, {row: 0, col: 0}, {focusMode: signal('roving')}); // Use gridAData
+      const {grid} = setupGridPattern(gridA, {row: 0, col: 0}, {focusMode: signal('roving')}); // Use gridA
       grid.setDefaultState();
       expect(grid.activedescendant()).toBeUndefined();
     });
@@ -400,10 +400,10 @@ describe('GridPattern (New Setup)', () => {
 
     it('should have activedescendant undefined if grid input disabled is true, even in activedescendant mode', () => {
       const {grid} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {
-          // Use gridAData
+          // Use gridA
           focusMode: signal('activedescendant'),
           disabled: signal(true),
         },
@@ -432,7 +432,7 @@ describe('GridPattern (New Setup)', () => {
 
   describe('Keyboard Navigation (onKeydown)', () => {
     it('should navigate down on ArrowDown', () => {
-      const {grid, activeCoordsSignal} = setupGridPattern(gridAData);
+      const {grid, activeCoordsSignal} = setupGridPattern(gridA);
       grid.setDefaultState();
       const event = arrowDown();
       spyOn(event, 'preventDefault');
@@ -445,7 +445,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should navigate up on ArrowUp', () => {
-      const {grid, activeCoordsSignal} = setupGridPattern(gridAData, {row: 1, col: 0});
+      const {grid, activeCoordsSignal} = setupGridPattern(gridA, {row: 1, col: 0});
       const event = arrowUp();
       spyOn(event, 'preventDefault');
       spyOn(grid.navigation, 'up').and.callThrough();
@@ -457,7 +457,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should navigate right on ArrowRight (ltr, default orientation vertical means nav maps to right)', () => {
-      const {grid, activeCoordsSignal} = setupGridPattern(gridAData);
+      const {grid, activeCoordsSignal} = setupGridPattern(gridA);
       grid.setDefaultState();
       const event = arrowRight();
       spyOn(event, 'preventDefault');
@@ -470,7 +470,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should navigate left on ArrowLeft (ltr, default orientation vertical means nav maps to left)', () => {
-      const {grid, activeCoordsSignal} = setupGridPattern(gridAData, {row: 0, col: 1});
+      const {grid, activeCoordsSignal} = setupGridPattern(gridA, {row: 0, col: 1});
       const event = arrowLeft();
       spyOn(event, 'preventDefault');
       spyOn(grid.navigation, 'left').and.callThrough();
@@ -483,7 +483,7 @@ describe('GridPattern (New Setup)', () => {
 
     it('should navigate left on ArrowRight (rtl)', () => {
       const {grid, activeCoordsSignal} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {textDirection: signal('rtl')},
       );
@@ -499,7 +499,7 @@ describe('GridPattern (New Setup)', () => {
 
     it('should navigate right on ArrowLeft (rtl)', () => {
       const {grid, activeCoordsSignal} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 1},
         {textDirection: signal('rtl')},
       );
@@ -514,7 +514,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should navigate to first cell in row on Home', () => {
-      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridAData, {row: 1, col: 2});
+      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridA, {row: 1, col: 2});
       const event = home();
       spyOn(event, 'preventDefault');
       spyOn(grid.navigation, 'gotoCell').and.callThrough();
@@ -526,7 +526,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should navigate to first cell in grid on Ctrl+Home', () => {
-      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridAData, {row: 1, col: 2});
+      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridA, {row: 1, col: 2});
       const event = home({control: true});
       spyOn(event, 'preventDefault');
       spyOn(grid.navigation, 'gotoCell').and.callThrough();
@@ -538,7 +538,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should navigate to last cell in row on End', () => {
-      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridAData, {row: 1, col: 0});
+      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridA, {row: 1, col: 0});
       const event = end();
       spyOn(event, 'preventDefault');
       spyOn(grid.navigation, 'gotoCell').and.callThrough();
@@ -550,7 +550,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should navigate to last cell in grid on Ctrl+End', () => {
-      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridAData, {row: 0, col: 0});
+      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridA, {row: 0, col: 0});
       const event = end({control: true});
       spyOn(event, 'preventDefault');
       spyOn(grid.navigation, 'gotoCell').and.callThrough();
@@ -576,7 +576,7 @@ describe('GridPattern (New Setup)', () => {
 
     it('should navigate in readonly mode', () => {
       const {grid, activeCoordsSignal} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {readonly: signal(true)},
       );
@@ -586,7 +586,7 @@ describe('GridPattern (New Setup)', () => {
 
     it('should not navigate when grid is disabled', () => {
       const {grid, activeCoordsSignal} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {disabled: signal(true)},
       );
@@ -601,7 +601,7 @@ describe('GridPattern (New Setup)', () => {
 
   describe('Pointer Interaction (onPointerdown)', () => {
     it('should set activeCoords to the clicked cell', () => {
-      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridAData);
+      const {grid, cells, activeCoordsSignal} = setupGridPattern(gridA);
       grid.setDefaultState();
 
       const targetCell = cells[1][1];
@@ -616,7 +616,7 @@ describe('GridPattern (New Setup)', () => {
 
     it('should allow focusing cell when readonly', () => {
       const {grid, cells, activeCoordsSignal} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {readonly: signal(true)},
       );
@@ -633,7 +633,7 @@ describe('GridPattern (New Setup)', () => {
 
     it('should do nothing if the grid is disabled', () => {
       const {grid, cells, activeCoordsSignal} = setupGridPattern(
-        gridAData,
+        gridA,
         {row: 0, col: 0},
         {disabled: signal(true)},
       );
@@ -668,7 +668,7 @@ describe('GridPattern (New Setup)', () => {
     });
 
     it('should do nothing if click target is not a cell element', () => {
-      const {grid, activeCoordsSignal} = setupGridPattern(gridAData);
+      const {grid, activeCoordsSignal} = setupGridPattern(gridA);
       grid.setDefaultState();
       const initialCoords = {row: 0, col: 0};
 
@@ -686,7 +686,7 @@ describe('GridPattern (New Setup)', () => {
     describe('tabindex', () => {
       it('should be 0 for roving focus mode when not disabled', () => {
         const {grid} = setupGridPattern(
-          gridAData,
+          gridA,
           {row: 0, col: 0},
           {
             focusMode: signal('roving'),
@@ -699,7 +699,7 @@ describe('GridPattern (New Setup)', () => {
 
       it('should be 0 for activedescendant focus mode when not disabled', () => {
         const {grid} = setupGridPattern(
-          gridAData,
+          gridA,
           {row: 0, col: 0},
           {
             focusMode: signal('activedescendant'),
@@ -712,7 +712,7 @@ describe('GridPattern (New Setup)', () => {
 
       it('should be 0 when grid input disabled is true (roving)', () => {
         const {grid} = setupGridPattern(
-          gridAData,
+          gridA,
           {row: 0, col: 0},
           {
             focusMode: signal('roving'),
@@ -725,7 +725,7 @@ describe('GridPattern (New Setup)', () => {
 
       it('should be 0 when grid input disabled is true (activedescendant)', () => {
         const {grid} = setupGridPattern(
-          gridAData,
+          gridA,
           {row: 0, col: 0},
           {
             focusMode: signal('activedescendant'),
@@ -740,7 +740,7 @@ describe('GridPattern (New Setup)', () => {
     describe('activedescendant', () => {
       it('should be undefined for roving focus mode', () => {
         const {grid} = setupGridPattern(
-          gridAData,
+          gridA,
           {row: 0, col: 0},
           {
             focusMode: signal('roving'),
@@ -770,7 +770,7 @@ describe('GridPattern (New Setup)', () => {
 
       it('should be undefined if no cell is active (e.g., invalid activeCoords), even in activedescendant mode', () => {
         const {grid, activeCoordsSignal} = setupGridPattern(
-          gridAData,
+          gridA,
           {row: 0, col: 0},
           {
             focusMode: signal('activedescendant'),
@@ -783,7 +783,7 @@ describe('GridPattern (New Setup)', () => {
 
       it('should be undefined when grid input disabled is true, even in activedescendant mode', () => {
         const {grid} = setupGridPattern(
-          gridAData,
+          gridA,
           {row: 0, col: 0},
           {
             focusMode: signal('activedescendant'),
