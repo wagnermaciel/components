@@ -1,0 +1,23 @@
+<div class="example-container">
+  <ul
+    cdkRadioGroup
+    orientation="horizontal"
+    class="example-radio-group example-radio-group-horizontal"
+    aria-labelledby="horizontal-radio-label"
+    [(value)]="selectedTShirtSize"
+  >
+    <label class="example-label" id="horizontal-radio-label">T-Shirt Size (Horizontal)</label>
+    @for (size of tShirtSizes; track size) {
+      <li
+        class="example-radio-option"
+        [value]="size"
+        cdkRadioButton
+        #radioButton="cdkRadioButton"
+      >
+        <span class="example-radio-indicator" [class.example-radio-checked]="radioButton.checked()"></span>
+        <span>{{ size }}</span>
+      </li>
+    }
+  </ul>
+  <p>Selected T-shirt size: {{selectedTShirtSize}}</p>
+</div>

@@ -1,0 +1,7 @@
+.example-radio-group-horizontal {
+  flex-direction: row;
+}
+
+.example-radio-group-horizontal .example-radio-option {
+  margin-right: 10px; /* Add some spacing between horizontal options */
+}

@@ -50,11 +50,7 @@ export const DEV_APP_ROUTES: Routes = [
     loadComponent: () =>
       import('./cdk-experimental-listbox/cdk-listbox-demo').then(m => m.CdkExperimentalListboxDemo),
   },
-  {
-    path: 'cdk-experimental-radio',
-    loadComponent: () =>
-      import('./cdk-experimental-radio/cdk-radio-demo').then(m => m.CdkExperimentalRadioDemo),
-  },
+  {path: 'cdk-experimental-radio', component: CdkExperimentalRadioDemo},
   {
     path: 'cdk-experimental-tabs',
     loadComponent: () =>
