@@ -6,16 +6,12 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {ChangeDetectionStrategy, Component, ViewEncapsulation} from '@angular/core';
-// Import examples here, e.g.
-// import {CdkRadioBasicExample} from '@angular/components-examples/cdk-experimental/radio';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
+import {CdkRadioExample} from '@angular/components-examples/cdk-experimental/radio';
 
 @Component({
   templateUrl: 'cdk-radio-demo.html',
-  // Add imports here, e.g.
-  // imports: [CdkRadioBasicExample],
-  styleUrl: 'cdk-radio-demo.css',
-  encapsulation: ViewEncapsulation.None,
+  imports: [CdkRadioExample],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CdkExperimentalRadioDemo {}

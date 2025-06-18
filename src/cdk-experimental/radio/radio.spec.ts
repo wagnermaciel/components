@@ -1,5 +1,5 @@
 import {Component, DebugElement, signal} from '@angular/core';
-import {CdkRadioButton, CdkRadioGroup} from './radio';
+import {CdkRadio, CdkRadioButton, CdkRadioGroup, CdkRadioLabel} from './radio';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {BidiModule, Direction} from '@angular/cdk/bidi';
@@ -8,10 +8,12 @@ import {provideFakeDirectionality, runAccessibilityChecks} from '@angular/cdk/te
 describe('CdkRadioGroup', () => {
   let fixture: ComponentFixture<RadioGroupExample>;
   let radioGroup: DebugElement;
-  let radioButtons: DebugElement[];
+  let radioWrappers: DebugElement[]; // <div cdkRadio>
+  let radioButtons: DebugElement[]; // <div cdkRadioButton>
+  let radioLabelElements: DebugElement[]; // <div cdkRadioLabel>
   let radioGroupInstance: CdkRadioGroup<number>;
   let radioGroupElement: HTMLElement;
-  let radioButtonElements: HTMLElement[];
+  let radioButtonElements: HTMLElement[]; // native elements of <div cdkRadioButton>
 
   const keydown = (key: string) => {
     radioGroupElement.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, key}));
@@ -45,7 +47,7 @@ describe('CdkRadioGroup', () => {
   }) {
     TestBed.configureTestingModule({
       providers: [provideFakeDirectionality(opts?.textDirection ?? 'ltr')],
-      imports: [BidiModule, RadioGroupExample],
+      imports: [BidiModule, RadioGroupExample, CdkRadio, CdkRadioLabel],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RadioGroupExample);
@@ -85,7 +87,7 @@ describe('CdkRadioGroup', () => {
   function setupDefaultRadioGroup() {
     TestBed.configureTestingModule({
       providers: [provideFakeDirectionality('ltr')],
-      imports: [BidiModule, DefaultRadioGroupExample],
+      imports: [BidiModule, DefaultRadioGroupExample, CdkRadio, CdkRadioLabel],
     }).compileComponents();
 
     const fixture = TestBed.createComponent(DefaultRadioGroupExample);
@@ -95,7 +97,9 @@ describe('CdkRadioGroup', () => {
 
   function defineTestVariables(fixture: ComponentFixture<unknown>) {
     radioGroup = fixture.debugElement.query(By.directive(CdkRadioGroup));
+    radioWrappers = fixture.debugElement.queryAll(By.directive(CdkRadio));
     radioButtons = fixture.debugElement.queryAll(By.directive(CdkRadioButton));
+    radioLabelElements = fixture.debugElement.queryAll(By.directive(CdkRadioLabel));
     radioGroupInstance = radioGroup.injector.get<CdkRadioGroup<number>>(CdkRadioGroup);
     radioGroupElement = radioGroup.nativeElement;
     radioButtonElements = radioButtons.map(radioButton => radioButton.nativeElement);
@@ -536,11 +540,14 @@ interface TestOption {
       [skipDisabled]="skipDisabled"
       cdkRadioGroup>
       @for (option of options(); track option.value) {
-        <div cdkRadioButton [value]="option.value" [disabled]="option.disabled">{{ option.label }}</div>
+        <div cdkRadio [value]="option.value" [disabled]="option.disabled">
+          <div cdkRadioButton></div>
+          <div cdkRadioLabel>{{ option.label }}</div>
+        </div>
       }
     </div>
   `,
-  imports: [CdkRadioGroup, CdkRadioButton],
+  imports: [CdkRadioGroup, CdkRadio, CdkRadioButton, CdkRadioLabel],
 })
 class RadioGroupExample {
   options = signal<TestOption[]>([
@@ -562,11 +569,20 @@ class RadioGroupExample {
 @Component({
   template: `
   <div cdkRadioGroup>
-    <div cdkRadioButton [value]="0">0</div>
-    <div cdkRadioButton [value]="1">1</div>
-    <div cdkRadioButton [value]="2">2</div>
+    <div cdkRadio [value]="0">
+      <div cdkRadioButton></div>
+      <div cdkRadioLabel>0</div>
+    </div>
+    <div cdkRadio [value]="1">
+      <div cdkRadioButton></div>
+      <div cdkRadioLabel>1</div>
+    </div>
+    <div cdkRadio [value]="2">
+      <div cdkRadioButton></div>
+      <div cdkRadioLabel>2</div>
+    </div>
   </div>
   `,
-  imports: [CdkRadioGroup, CdkRadioButton],
+  imports: [CdkRadioGroup, CdkRadio, CdkRadioButton, CdkRadioLabel],
 })
 class DefaultRadioGroupExample {}

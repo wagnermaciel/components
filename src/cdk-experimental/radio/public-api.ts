@@ -6,4 +6,4 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-export {CdkRadioGroup, CdkRadioButton} from './radio';
+export {CdkRadioGroup, CdkRadioButton, CdkRadio, CdkRadioLabel} from './radio';
