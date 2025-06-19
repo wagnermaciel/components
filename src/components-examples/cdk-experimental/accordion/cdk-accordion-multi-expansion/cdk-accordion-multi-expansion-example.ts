@@ -22,7 +22,7 @@ import {
   ],
 })
 export class CdkAccordionMultiExpansionExample {
-  expandedIds = model<string[]>(['item1']); // Can pre-expand multiple if desired, e.g. ['item1', 'item3']
+  expandedIds = model<string[]>(['item1']);
   items = ['item1', 'item2', 'item3'];
 
   expansionIcon(item: string): Signal<string> {

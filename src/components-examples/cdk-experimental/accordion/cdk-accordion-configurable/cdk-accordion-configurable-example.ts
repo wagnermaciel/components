@@ -17,7 +17,7 @@ import {
   selector: 'cdk-accordion-configurable-example',
   exportAs: 'cdkAccordionConfigurableExample',
   templateUrl: 'cdk-accordion-configurable-example.html',
-  styleUrl: '../cdk-accordion-examples.css',
+  styleUrl: '../cdk-accordion-examples.css', // Point to shared CSS
   standalone: true,
   imports: [
     ReactiveFormsModule,

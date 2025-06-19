@@ -41,7 +41,7 @@
 .example-accordion-header .cdk-accordion-trigger[aria-disabled='true'] {
   color: inherit;
   opacity: 0.6;
-  cursor: not-allowed; /* Ensure cursor indicates non-action, but it's still focusable where applicable */
+  cursor: not-allowed;
 }
 
 .example-accordion-panel {

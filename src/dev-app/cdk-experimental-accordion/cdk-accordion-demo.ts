@@ -6,8 +6,7 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {Component} from '@angular/core';
-import {RouterOutlet} from '@angular/router';
+import {ChangeDetectionStrategy, Component, ViewEncapsulation} from '@angular/core';
 import {
   CdkAccordionConfigurableExample,
   CdkAccordionDisabledFocusableExample,
@@ -17,16 +16,18 @@ import {
 } from '@angular/components-examples/cdk-experimental/accordion';
 
 @Component({
-  selector: 'cdk-accordion-demo',
+  // selector: 'cdk-accordion-demo', // Not needed as it's routed directly
   templateUrl: 'cdk-accordion-demo.html',
+  styleUrl: 'cdk-accordion-demo.css',
   standalone: true,
   imports: [
-    RouterOutlet,
     CdkAccordionConfigurableExample,
     CdkAccordionSingleExpansionExample,
     CdkAccordionMultiExpansionExample,
     CdkAccordionDisabledFocusableExample,
     CdkAccordionDisabledSkippedExample,
   ],
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CdkExperimentalAccordionDemo {}

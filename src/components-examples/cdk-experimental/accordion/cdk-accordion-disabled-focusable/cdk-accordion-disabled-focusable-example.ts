@@ -22,10 +22,8 @@ import {
   ],
 })
 export class CdkAccordionDisabledFocusableExample {
-  // We can choose to expand some items by default or none.
-  // For this example, let's not pre-expand any to clearly show disabled state.
   expandedIds = model<string[]>([]);
-  items = ['item1', 'item2', 'item3', 'item4']; // Added item4 for another disabled example
+  items = ['item1', 'item2', 'item3', 'item4'];
 
   expansionIcon(item: string): Signal<string> {
     return computed(() => (this.expandedIds().includes(item) ? 'expand_less' : 'expand_more'));
