@@ -6,12 +6,27 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {CdkAccordionExample} from '@angular/components-examples/cdk-experimental/accordion';
+import {Component} from '@angular/core';
+import {RouterOutlet} from '@angular/router';
+import {
+  CdkAccordionConfigurableExample,
+  CdkAccordionDisabledFocusableExample,
+  CdkAccordionDisabledSkippedExample,
+  CdkAccordionMultiExpansionExample,
+  CdkAccordionSingleExpansionExample,
+} from '@angular/components-examples/cdk-experimental/accordion';
 
 @Component({
+  selector: 'cdk-accordion-demo',
   templateUrl: 'cdk-accordion-demo.html',
-  imports: [CdkAccordionExample],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [
+    RouterOutlet,
+    CdkAccordionConfigurableExample,
+    CdkAccordionSingleExpansionExample,
+    CdkAccordionMultiExpansionExample,
+    CdkAccordionDisabledFocusableExample,
+    CdkAccordionDisabledSkippedExample,
+  ],
 })
 export class CdkExperimentalAccordionDemo {}

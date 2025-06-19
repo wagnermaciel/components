@@ -12,12 +12,13 @@ import {
   CdkAccordionContent,
 } from '@angular/cdk-experimental/accordion';
 
-/** @title Accordion using UI Patterns. */
+/** @title Configurable Accordion using UI Patterns. */
 @Component({
-  selector: 'cdk-accordion-example',
-  exportAs: 'cdkAccordionExample',
-  templateUrl: 'cdk-accordion-example.html',
-  styleUrl: 'cdk-accordion-example.css',
+  selector: 'cdk-accordion-configurable-example',
+  exportAs: 'cdkAccordionConfigurableExample',
+  templateUrl: 'cdk-accordion-configurable-example.html',
+  styleUrl: '../cdk-accordion-examples.css',
+  standalone: true,
   imports: [
     ReactiveFormsModule,
     MatIconModule,
@@ -31,7 +32,7 @@ import {
     CdkAccordionContent,
   ],
 })
-export class CdkAccordionExample {
+export class CdkAccordionConfigurableExample {
   // Accordion Group Properties
   wrap = new FormControl(true, {nonNullable: true});
   multi = new FormControl(true, {nonNullable: true});
