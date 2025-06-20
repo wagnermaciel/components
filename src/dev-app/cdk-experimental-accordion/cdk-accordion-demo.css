@@ -1,1 +1,19 @@
-/* Styles for CDK Accordion Demo Page (if any are needed) */
+.example-accordion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 20px;
+}
+
+.example-accordion-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.example-configurable-accordion-container {
+  padding-top: 40px;
+}
+
+h4 {
+  height: 36px;
+}

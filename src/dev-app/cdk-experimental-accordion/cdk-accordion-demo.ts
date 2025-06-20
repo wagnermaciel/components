@@ -16,7 +16,6 @@ import {
 } from '@angular/components-examples/cdk-experimental/accordion';
 
 @Component({
-  // selector: 'cdk-accordion-demo', // Not needed as it's routed directly
   templateUrl: 'cdk-accordion-demo.html',
   styleUrl: 'cdk-accordion-demo.css',
   standalone: true,

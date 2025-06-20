@@ -1,7 +1,3 @@
-<p>
-  In this example, "Item 2 Trigger (disabled)" and "Item 4 Trigger (group disabled)"
-  should be focusable but not expandable.
-</p>
 <div
   cdkAccordionGroup
   class="example-accordion-group"
@@ -47,30 +43,6 @@
     <div cdkAccordionPanel value="item3" class="example-accordion-panel">
       <ng-template cdkAccordionContent>
         <p>This is the content for Item 3.</p>
-      </ng-template>
-    </div>
-  </div>
-</div>
-
-<h4>Group Disabled (Item 4 should be focusable but not expandable)</h4>
-<div
-  cdkAccordionGroup
-  class="example-accordion-group"
-  [multiExpandable]="true"
-  [skipDisabled]="false"
-  [disabled]="true"
-  [(value)]="expandedIds"
->
-  <div class="example-accordion-container">
-    <h3 class="example-accordion-header">
-      <button cdkAccordionTrigger value="item4">
-        Item 4 Trigger (group disabled)
-        <mat-icon aria-hidden="true">{{expansionIcon('item4')()}}</mat-icon>
-      </button>
-    </h3>
-    <div cdkAccordionPanel value="item4" class="example-accordion-panel">
-      <ng-template cdkAccordionContent>
-        <p>This is the content for Item 4. This should not be expandable as the group is disabled.</p>
       </ng-template>
     </div>
   </div>
