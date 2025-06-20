@@ -70,4 +70,40 @@
       </ng-template>
     </div>
   </div>
+
+  <div class="example-accordion-container">
+    <h3 class="example-accordion-header">
+      <button cdkAccordionTrigger value="item4">
+        Additional Accordion Title 1
+        <mat-icon aria-hidden="true">{{expansionIcon('item4')()}}</mat-icon>
+      </button>
+    </h3>
+    <div
+      cdkAccordionPanel
+      value="item4"
+      class="example-accordion-panel"
+    >
+      <ng-template cdkAccordionContent>
+        <p>Additional Accordion Content 1</p>
+      </ng-template>
+    </div>
+  </div>
+
+  <div class="example-accordion-container">
+    <h3 class="example-accordion-header">
+      <button cdkAccordionTrigger value="item5">
+        Additional Accordion Title 2
+        <mat-icon aria-hidden="true">{{expansionIcon('item5')()}}</mat-icon>
+      </button>
+    </h3>
+    <div
+      cdkAccordionPanel
+      value="item5"
+      class="example-accordion-panel"
+    >
+      <ng-template cdkAccordionContent>
+        <p>Additional Accordion Content 2</p>
+      </ng-template>
+    </div>
+  </div>
 </div>
