@@ -9,87 +9,108 @@
 import {Signal, signal, WritableSignal} from '@angular/core';
 import {ListTypeaheadItem, ListTypeahead, ListTypeaheadInputs} from './list-typeahead';
 import {fakeAsync, tick} from '@angular/core/testing';
-import {getListFocus} from '../list-focus/list-focus.spec';
-import {ListFocus} from '../list-focus/list-focus';
+import {
+  createListFocusBehavior,
+  createListFocusInputs,
+  createListFocusItemInputs,
+} from '../list-focus/list-focus.spec';
 
-type TestItem = ListTypeaheadItem & {
-  disabled: WritableSignal<boolean>;
-};
-type TestInputs = Partial<ListTypeaheadInputs<TestItem>> & {
-  numItems?: number;
-};
-
-function getTypeahead(inputs: TestInputs = {}): ListTypeahead<TestItem> {
-  const items = getItems(inputs.numItems ?? 5);
-  const focusManager = getListFocus({...inputs, items}) as ListFocus<TestItem>;
-
-  return new ListTypeahead({
-    focusManager,
-    ...focusManager.inputs,
-    items,
+function createListTypeaheadInputs(
+  inputs: Partial<ListTypeaheadInputs<ListTypeaheadItem>>,
+): ListTypeaheadInputs<ListTypeaheadItem> {
+  const listFocusBehavior = createListFocusInputs<ListTypeaheadItem>(inputs);
+  return {
     typeaheadDelay: signal(0.5),
+    ...listFocusBehavior,
     ...inputs,
-  });
+  };
 }
 
-function getItems(length: number): Signal<TestItem[]> {
+export function createListTypeaheadItemInputs(
+  inputs: Partial<ListTypeaheadItem>,
+): ListTypeaheadItem {
+  return {
+    searchTerm: signal(''),
+    ...createListFocusItemInputs(inputs),
+    ...inputs,
+  };
+}
+
+function createListTypeaheadItems(length: number): Signal<ListTypeaheadItem[]> {
   return signal(
     Array.from({length}).map((_, i) => {
-      return {
+      return createListTypeaheadItemInputs({
+        id: signal(`${i}`),
         index: signal(i),
         searchTerm: signal(`Item ${i}`),
-        id: signal(`${i}`),
-        disabled: signal(false),
-        element: signal({focus: () => {}} as HTMLElement),
-      };
+      });
     }),
   );
 }
 
+function createListTypeaheadBehavior(
+  inputs: Partial<ListTypeaheadInputs<ListTypeaheadItem>> &
+    Pick<ListTypeaheadInputs<ListTypeaheadItem>, 'items' | 'activeItem'>,
+): ListTypeahead<ListTypeaheadItem> {
+  const focusBehavior = createListFocusBehavior<ListTypeaheadItem>(inputs);
+  return new ListTypeahead({
+    ...createListTypeaheadInputs({...focusBehavior.inputs, ...inputs}),
+    focusBehavior,
+  });
+}
+
+function createDefaultListTypeaheadBehavior(
+  inputs: Partial<ListTypeaheadInputs<ListTypeaheadItem>> = {},
+): ListTypeahead<ListTypeaheadItem> {
+  const items = inputs.items ?? createListTypeaheadItems(5);
+  const activeItem = inputs.activeItem ?? signal(items()[0]);
+  return createListTypeaheadBehavior({items, activeItem, ...inputs});
+}
+
 describe('List Typeahead', () => {
-  let items: TestItem[];
-  let typeahead: ListTypeahead<TestItem>;
+  let items: ListTypeaheadItem[];
+  let typeahead: ListTypeahead<ListTypeaheadItem>;
 
   beforeEach(() => {
-    typeahead = getTypeahead();
+    typeahead = createDefaultListTypeaheadBehavior();
     items = typeahead.inputs.items();
   });
 
   describe('#search', () => {
     it('should navigate to an item', () => {
       typeahead.search('i');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(1);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(1);
 
       typeahead.search('t');
       typeahead.search('e');
       typeahead.search('m');
       typeahead.search(' ');
       typeahead.search('3');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(3);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(3);
     });
 
     it('should reset after a delay', fakeAsync(() => {
       typeahead.search('i');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(1);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(1);
 
       tick(500);
 
       typeahead.search('i');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(2);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(2);
     }));
 
     it('should skip disabled items', () => {
-      items[1].disabled.set(true);
       (typeahead.inputs.skipDisabled as WritableSignal<boolean>).set(true);
+      (items[1].disabled as WritableSignal<boolean>).set(true);
       typeahead.search('i');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(2);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(2);
     });
 
     it('should not skip disabled items', () => {
-      items[1].disabled.set(true);
+      (items[1].disabled as WritableSignal<boolean>).set(true);
       (typeahead.inputs.skipDisabled as WritableSignal<boolean>).set(false);
       typeahead.search('i');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(1);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(1);
     });
 
     it('should ignore keys like shift', () => {
@@ -102,7 +123,7 @@ describe('List Typeahead', () => {
       typeahead.search('m');
       typeahead.search(' ');
       typeahead.search('2');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(2);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(2);
     });
 
     it('should not allow a query to begin with a space', () => {
@@ -113,7 +134,7 @@ describe('List Typeahead', () => {
       typeahead.search('m');
       typeahead.search(' ');
       typeahead.search('3');
-      expect(typeahead.inputs.focusManager.activeIndex()).toBe(3);
+      expect(typeahead.inputs.focusBehavior.activeIndex()).toBe(3);
     });
   });
 });

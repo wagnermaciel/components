@@ -41,11 +41,11 @@ export class ListSelection<T extends ListSelectionItem> {
     this.inputs.items().filter(item => this.inputs.value().includes(item.value())),
   );
 
-  constructor(readonly inputs: ListSelectionInputs<T> & {focusManager: ListFocus<T>}) {}
+  constructor(readonly inputs: ListSelectionInputs<T> & {focusBehavior: ListFocus<T>}) {}
 
   /** Selects the item at the current active index. */
   select(item?: ListSelectionItem, opts = {anchor: true}) {
-    item = item ?? (this.inputs.focusManager.inputs.activeItem() as ListSelectionItem);
+    item = item ?? (this.inputs.focusBehavior.inputs.activeItem() as ListSelectionItem);
 
     if (item.disabled() || this.inputs.value().includes(item.value())) {
       return;
@@ -64,7 +64,7 @@ export class ListSelection<T extends ListSelectionItem> {
 
   /** Deselects the item at the current active index. */
   deselect(item?: T | null) {
-    item = item ?? this.inputs.focusManager.inputs.activeItem();
+    item = item ?? this.inputs.focusBehavior.inputs.activeItem();
 
     if (item && !item.disabled()) {
       this.inputs.value.update(values => values.filter(value => value !== item.value()));
@@ -73,7 +73,7 @@ export class ListSelection<T extends ListSelectionItem> {
 
   /** Toggles the item at the current active index. */
   toggle() {
-    const item = this.inputs.focusManager.inputs.activeItem();
+    const item = this.inputs.focusBehavior.inputs.activeItem();
     if (item) {
       this.inputs.value().includes(item.value()) ? this.deselect() : this.select();
     }
@@ -81,7 +81,7 @@ export class ListSelection<T extends ListSelectionItem> {
 
   /** Toggles only the item at the current active index. */
   toggleOne() {
-    const item = this.inputs.focusManager.inputs.activeItem();
+    const item = this.inputs.focusBehavior.inputs.activeItem();
     if (item) {
       this.inputs.value().includes(item.value()) ? this.deselect() : this.selectOne();
     }
@@ -141,7 +141,7 @@ export class ListSelection<T extends ListSelectionItem> {
 
   /** Sets the selection to only the current active item. */
   selectOne() {
-    const item = this.inputs.focusManager.inputs.activeItem();
+    const item = this.inputs.focusBehavior.inputs.activeItem();
     if (item && item.disabled()) {
       return;
     }
@@ -162,10 +162,10 @@ export class ListSelection<T extends ListSelectionItem> {
    * selected range that are now outside of the selected range
    */
   selectRange(opts = {anchor: true}) {
-    const isStartOfRange = this.inputs.focusManager.prevActiveIndex() === this.rangeStartIndex();
+    const isStartOfRange = this.inputs.focusBehavior.prevActiveIndex() === this.rangeStartIndex();
 
     if (isStartOfRange && opts.anchor) {
-      this.beginRangeSelection(this.inputs.focusManager.prevActiveIndex());
+      this.beginRangeSelection(this.inputs.focusBehavior.prevActiveIndex());
     }
 
     const itemsInRange = this._getItemsFromIndex(this.rangeStartIndex());
@@ -189,7 +189,7 @@ export class ListSelection<T extends ListSelectionItem> {
   }
 
   /** Marks the given index as the start of a range selection. */
-  beginRangeSelection(index: number = this.inputs.focusManager.activeIndex()) {
+  beginRangeSelection(index: number = this.inputs.focusBehavior.activeIndex()) {
     this.rangeStartIndex.set(index);
     this.rangeEndIndex.set(index);
   }
@@ -200,15 +200,15 @@ export class ListSelection<T extends ListSelectionItem> {
       return [];
     }
 
-    const upper = Math.max(this.inputs.focusManager.activeIndex(), index);
-    const lower = Math.min(this.inputs.focusManager.activeIndex(), index);
+    const upper = Math.max(this.inputs.focusBehavior.activeIndex(), index);
+    const lower = Math.min(this.inputs.focusBehavior.activeIndex(), index);
 
     const items = [];
     for (let i = lower; i <= upper; i++) {
       items.push(this.inputs.items()[i]);
     }
 
-    if (this.inputs.focusManager.activeIndex() < index) {
+    if (this.inputs.focusBehavior.activeIndex() < index) {
       return items.reverse();
     }
 

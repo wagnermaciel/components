@@ -26,11 +26,11 @@ export interface ListNavigationInputs<T extends ListNavigationItem> extends List
 
 /** Controls navigation for a list of items. */
 export class ListNavigation<T extends ListNavigationItem> {
-  constructor(readonly inputs: ListNavigationInputs<T> & {focusManager: ListFocus<T>}) {}
+  constructor(readonly inputs: ListNavigationInputs<T> & {focusBehavior: ListFocus<T>}) {}
 
   /** Navigates to the given item. */
   goto(item?: T): boolean {
-    return item ? this.inputs.focusManager.focus(item) : false;
+    return item ? this.inputs.focusBehavior.focus(item) : false;
   }
 
   /** Navigates to the next item in the list. */
@@ -45,7 +45,7 @@ export class ListNavigation<T extends ListNavigationItem> {
 
   /** Navigates to the first item in the list. */
   first(): boolean {
-    const item = this.inputs.items().find(i => this.inputs.focusManager.isFocusable(i));
+    const item = this.inputs.items().find(i => this.inputs.focusBehavior.isFocusable(i));
     return item ? this.goto(item) : false;
   }
 
@@ -53,7 +53,7 @@ export class ListNavigation<T extends ListNavigationItem> {
   last(): boolean {
     const items = this.inputs.items();
     for (let i = items.length - 1; i >= 0; i--) {
-      if (this.inputs.focusManager.isFocusable(items[i])) {
+      if (this.inputs.focusBehavior.isFocusable(items[i])) {
         return this.goto(items[i]);
       }
     }
@@ -64,7 +64,7 @@ export class ListNavigation<T extends ListNavigationItem> {
   private _advance(delta: 1 | -1): boolean {
     const items = this.inputs.items();
     const itemCount = items.length;
-    const startIndex = this.inputs.focusManager.activeIndex();
+    const startIndex = this.inputs.focusBehavior.activeIndex();
     const step = (i: number) =>
       this.inputs.wrap() ? (i + delta + itemCount) % itemCount : i + delta;
 
@@ -72,7 +72,7 @@ export class ListNavigation<T extends ListNavigationItem> {
     // in the case that all options are disabled. If wrapping is disabled, the loop terminates
     // when the index goes out of bounds.
     for (let i = step(startIndex); i !== startIndex && i < itemCount && i >= 0; i = step(i)) {
-      if (this.inputs.focusManager.isFocusable(items[i])) {
+      if (this.inputs.focusBehavior.isFocusable(items[i])) {
         return this.goto(items[i]);
       }
     }

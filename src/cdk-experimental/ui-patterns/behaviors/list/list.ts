@@ -87,11 +87,11 @@ export class List<T extends ListItem> {
 
   constructor(readonly inputs: ListInputs<T>) {
     this.focusBehavior = new ListFocus(inputs);
-    this.selectionBehavior = new ListSelection({...inputs, focusManager: this.focusBehavior});
-    this.typeaheadBehavior = new ListTypeahead({...inputs, focusManager: this.focusBehavior});
+    this.selectionBehavior = new ListSelection({...inputs, focusBehavior: this.focusBehavior});
+    this.typeaheadBehavior = new ListTypeahead({...inputs, focusBehavior: this.focusBehavior});
     this.navigationBehavior = new ListNavigation({
       ...inputs,
-      focusManager: this.focusBehavior,
+      focusBehavior: this.focusBehavior,
       wrap: computed(() => this._wrap() && this.inputs.wrap()),
     });
   }

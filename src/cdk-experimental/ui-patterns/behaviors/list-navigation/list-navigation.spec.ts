@@ -6,33 +6,67 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {signal, WritableSignal} from '@angular/core';
+import {Signal, signal, WritableSignal} from '@angular/core';
 import {ListNavigation, ListNavigationInputs, ListNavigationItem} from './list-navigation';
-import {getListFocus} from '../list-focus/list-focus.spec';
+import {
+  createListFocusBehavior,
+  createListFocusInputs,
+  createListFocusItemInputs,
+} from '../list-focus/list-focus.spec';
 
-type TestItem = ListNavigationItem & {
-  disabled: WritableSignal<boolean>;
-};
-type TestInputs = Partial<ListNavigationInputs<ListNavigationItem>> & {
-  numItems?: number;
-};
-
-function getNavigation(inputs: TestInputs = {}): ListNavigation<ListNavigationItem> {
-  const focusManager = getListFocus(inputs);
-  return new ListNavigation({
-    focusManager,
-    ...focusManager.inputs,
+function createListNavigationInputs(
+  inputs: Partial<ListNavigationInputs<ListNavigationItem>>,
+): ListNavigationInputs<ListNavigationItem> {
+  const listFocusBehavior = createListFocusInputs<ListNavigationItem>(inputs);
+  return {
     wrap: signal(false),
     textDirection: signal('ltr'),
     orientation: signal('vertical'),
+    ...listFocusBehavior,
     ...inputs,
+  };
+}
+
+export function createListNavigationItemInputs(
+  inputs: Partial<ListNavigationItem>,
+): ListNavigationItem {
+  return {
+    ...createListFocusItemInputs(inputs),
+    ...inputs,
+  };
+}
+
+function createListNavigationItems(length: number): Signal<ListNavigationItem[]> {
+  return signal(
+    Array.from({length}).map((_, i) => {
+      return createListNavigationItemInputs({id: signal(`${i}`), index: signal(i)});
+    }),
+  );
+}
+
+function createListNavigationBehavior(
+  inputs: Partial<ListNavigationInputs<ListNavigationItem>> &
+    Pick<ListNavigationInputs<ListNavigationItem>, 'items' | 'activeItem'>,
+): ListNavigation<ListNavigationItem> {
+  const focusBehavior = createListFocusBehavior<ListNavigationItem>(inputs);
+  return new ListNavigation({
+    ...createListNavigationInputs({...focusBehavior.inputs, ...inputs}),
+    focusBehavior,
   });
+}
+
+function createDefaultListNavigationBehavior(
+  inputs: Partial<ListNavigationInputs<ListNavigationItem>> = {},
+): ListNavigation<ListNavigationItem> {
+  const items = inputs.items ?? createListNavigationItems(5);
+  const activeItem = inputs.activeItem ?? signal(items()[0]);
+  return createListNavigationBehavior({items, activeItem, ...inputs});
 }
 
 describe('List Navigation', () => {
   describe('#goto', () => {
     it('should navigate to an item', () => {
-      const nav = getNavigation();
+      const nav = createDefaultListNavigationBehavior();
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
       nav.goto(nav.inputs.items()[3]);
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[3]);
@@ -41,13 +75,13 @@ describe('List Navigation', () => {
 
   describe('#next', () => {
     it('should navigate next', () => {
-      const nav = getNavigation();
+      const nav = createDefaultListNavigationBehavior();
       nav.next(); // 0 -> 1
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[1]);
     });
 
     it('should wrap', () => {
-      const nav = getNavigation({wrap: signal(true)});
+      const nav = createDefaultListNavigationBehavior({wrap: signal(true)});
       nav.next(); // 0 -> 1
       nav.next(); // 1 -> 2
       nav.next(); // 2 -> 3
@@ -57,7 +91,7 @@ describe('List Navigation', () => {
     });
 
     it('should not wrap', () => {
-      const nav = getNavigation({wrap: signal(false)});
+      const nav = createDefaultListNavigationBehavior({wrap: signal(false)});
       nav.next(); // 0 -> 1
       nav.next(); // 1 -> 2
       nav.next(); // 2 -> 3
@@ -67,30 +101,30 @@ describe('List Navigation', () => {
     });
 
     it('should skip disabled items', () => {
-      const nav = getNavigation({skipDisabled: signal(true)});
-      const items = nav.inputs.items() as TestItem[];
-      items[1].disabled.set(true);
+      const nav = createDefaultListNavigationBehavior({skipDisabled: signal(true)});
+      const items = nav.inputs.items();
+      (items[1].disabled as WritableSignal<boolean>).set(true);
       nav.next(); // 0 -> 2
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[2]);
     });
 
     it('should not skip disabled items', () => {
-      const nav = getNavigation({skipDisabled: signal(false)});
-      const items = nav.inputs.items() as TestItem[];
-      items[1].disabled.set(true);
+      const nav = createDefaultListNavigationBehavior({skipDisabled: signal(false)});
+      const items = nav.inputs.items();
+      (items[1].disabled as WritableSignal<boolean>).set(true);
       nav.next(); // 0 -> 1
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[1]);
     });
 
     it('should wrap and skip disabled items', () => {
-      const nav = getNavigation({
+      const nav = createDefaultListNavigationBehavior({
         wrap: signal(true),
         skipDisabled: signal(true),
       });
-      const items = nav.inputs.items() as TestItem[];
-      items[2].disabled.set(true);
-      items[3].disabled.set(true);
-      items[4].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[2].disabled as WritableSignal<boolean>).set(true);
+      (items[3].disabled as WritableSignal<boolean>).set(true);
+      (items[4].disabled as WritableSignal<boolean>).set(true);
 
       nav.next(); // 0 -> 1
       nav.next(); // 1 -> 0
@@ -99,18 +133,19 @@ describe('List Navigation', () => {
     });
 
     it('should do nothing if other items are disabled', () => {
-      const nav = getNavigation({skipDisabled: signal(true)});
-      const items = nav.inputs.items() as TestItem[];
-      items[1].disabled.set(true);
-      items[2].disabled.set(true);
-      items[3].disabled.set(true);
-      items[4].disabled.set(true);
+      const nav = createDefaultListNavigationBehavior({skipDisabled: signal(true)});
+      const items = nav.inputs.items();
+      (items[1].disabled as WritableSignal<boolean>).set(true);
+      (items[2].disabled as WritableSignal<boolean>).set(true);
+      (items[3].disabled as WritableSignal<boolean>).set(true);
+      (items[4].disabled as WritableSignal<boolean>).set(true);
       nav.next(); // 0 -> 0
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
 
     it('should do nothing if there are no other items to navigate to', () => {
-      const nav = getNavigation({numItems: 1});
+      const items = createListNavigationItems(1);
+      const nav = createDefaultListNavigationBehavior({items});
       nav.next(); // 0 -> 0
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
@@ -118,70 +153,71 @@ describe('List Navigation', () => {
 
   describe('#prev', () => {
     it('should navigate prev', () => {
-      const nav = getNavigation();
+      const nav = createDefaultListNavigationBehavior();
       nav.goto(nav.inputs.items()[2]);
       nav.prev(); // 2 -> 1
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[1]);
     });
 
     it('should wrap', () => {
-      const nav = getNavigation({wrap: signal(true)});
+      const nav = createDefaultListNavigationBehavior({wrap: signal(true)});
       nav.prev(); // 0 -> 4
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[4]);
     });
 
     it('should not wrap', () => {
-      const nav = getNavigation({wrap: signal(false)});
+      const nav = createDefaultListNavigationBehavior({wrap: signal(false)});
       nav.prev(); // 0 -> 0
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
 
     it('should skip disabled items', () => {
-      const nav = getNavigation({skipDisabled: signal(true)});
+      const nav = createDefaultListNavigationBehavior({skipDisabled: signal(true)});
       nav.goto(nav.inputs.items()[2]);
-      const items = nav.inputs.items() as TestItem[];
-      items[1].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[1].disabled as WritableSignal<boolean>).set(true);
       nav.prev(); // 2 -> 0
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
 
     it('should not skip disabled items', () => {
-      const nav = getNavigation({skipDisabled: signal(false)});
+      const nav = createDefaultListNavigationBehavior({skipDisabled: signal(false)});
       nav.goto(nav.inputs.items()[2]);
-      const items = nav.inputs.items() as TestItem[];
-      items[1].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[1].disabled as WritableSignal<boolean>).set(true);
       nav.prev(); // 2 -> 1
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[1]);
     });
 
     it('should wrap and skip disabled items', () => {
-      const nav = getNavigation({
+      const nav = createDefaultListNavigationBehavior({
         wrap: signal(true),
         skipDisabled: signal(true),
       });
       nav.goto(nav.inputs.items()[2]);
-      const items = nav.inputs.items() as TestItem[];
-      items[0].disabled.set(true);
-      items[1].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[0].disabled as WritableSignal<boolean>).set(true);
+      (items[1].disabled as WritableSignal<boolean>).set(true);
       nav.prev(); // 2 -> 4
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[4]);
     });
 
     it('should do nothing if other items are disabled', () => {
-      const nav = getNavigation({
+      const nav = createDefaultListNavigationBehavior({
         skipDisabled: signal(true),
       });
-      const items = nav.inputs.items() as TestItem[];
-      items[1].disabled.set(true);
-      items[2].disabled.set(true);
-      items[3].disabled.set(true);
-      items[4].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[1].disabled as WritableSignal<boolean>).set(true);
+      (items[2].disabled as WritableSignal<boolean>).set(true);
+      (items[3].disabled as WritableSignal<boolean>).set(true);
+      (items[4].disabled as WritableSignal<boolean>).set(true);
       nav.prev(); // 0 -> 0
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
 
     it('should do nothing if there are no other items to navigate to', () => {
-      const nav = getNavigation({numItems: 1});
+      const items = createListNavigationItems(1);
+      const nav = createDefaultListNavigationBehavior({items});
       nav.prev(); // 0 -> 0
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
@@ -189,26 +225,26 @@ describe('List Navigation', () => {
 
   describe('#first', () => {
     it('should navigate to the first item', () => {
-      const nav = getNavigation();
+      const nav = createDefaultListNavigationBehavior();
       nav.goto(nav.inputs.items()[2]);
       nav.first();
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
 
     it('should skip disabled items', () => {
-      const nav = getNavigation({skipDisabled: signal(true)});
+      const nav = createDefaultListNavigationBehavior({skipDisabled: signal(true)});
       nav.goto(nav.inputs.items()[2]);
-      const items = nav.inputs.items() as TestItem[];
-      items[0].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[0].disabled as WritableSignal<boolean>).set(true);
       nav.first();
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[1]);
     });
 
     it('should not skip disabled items', () => {
-      const nav = getNavigation({skipDisabled: signal(false)});
+      const nav = createDefaultListNavigationBehavior({skipDisabled: signal(false)});
       nav.goto(nav.inputs.items()[2]);
-      const items = nav.inputs.items() as TestItem[];
-      items[0].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[0].disabled as WritableSignal<boolean>).set(true);
       nav.first();
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[0]);
     });
@@ -216,27 +252,27 @@ describe('List Navigation', () => {
 
   describe('#last', () => {
     it('should navigate to the last item', () => {
-      const nav = getNavigation();
+      const nav = createDefaultListNavigationBehavior();
       nav.last();
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[4]);
     });
 
     it('should skip disabled items', () => {
-      const nav = getNavigation({
+      const nav = createDefaultListNavigationBehavior({
         skipDisabled: signal(true),
       });
-      const items = nav.inputs.items() as TestItem[];
-      items[4].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[4].disabled as WritableSignal<boolean>).set(true);
       nav.last();
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[3]);
     });
 
     it('should not skip disabled items', () => {
-      const nav = getNavigation({
+      const nav = createDefaultListNavigationBehavior({
         skipDisabled: signal(false),
       });
-      const items = nav.inputs.items() as TestItem[];
-      items[4].disabled.set(true);
+      const items = nav.inputs.items();
+      (items[4].disabled as WritableSignal<boolean>).set(true);
       nav.last();
       expect(nav.inputs.activeItem()).toBe(nav.inputs.items()[4]);
     });

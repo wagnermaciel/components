@@ -34,7 +34,7 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
   timeout?: ReturnType<typeof setTimeout> | undefined;
 
   /** The focus controller of the parent list. */
-  focusManager: ListFocus<T>;
+  focusBehavior: ListFocus<T>;
 
   /** Whether the user is actively typing a typeahead search query. */
   isTyping = computed(() => this._query().length > 0);
@@ -45,8 +45,8 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
   /** The index where that the typeahead search was initiated from. */
   private _startIndex = signal<number | undefined>(undefined);
 
-  constructor(readonly inputs: ListTypeaheadInputs<T> & {focusManager: ListFocus<T>}) {
-    this.focusManager = inputs.focusManager;
+  constructor(readonly inputs: ListTypeaheadInputs<T> & {focusBehavior: ListFocus<T>}) {
+    this.focusBehavior = inputs.focusBehavior;
   }
 
   /** Performs a typeahead search, appending the given character to the search string. */
@@ -60,7 +60,7 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
     }
 
     if (this._startIndex() === undefined) {
-      this._startIndex.set(this.focusManager.activeIndex());
+      this._startIndex.set(this.focusBehavior.activeIndex());
     }
 
     clearTimeout(this.timeout);
@@ -68,7 +68,7 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
     const item = this._getItem();
 
     if (item) {
-      this.focusManager.focus(item);
+      this.focusBehavior.focus(item);
     }
 
     this.timeout = setTimeout(() => {
@@ -84,7 +84,7 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
    * current query starting from the the current anchor index.
    */
   private _getItem() {
-    let items = this.focusManager.inputs.items();
+    let items = this.focusBehavior.inputs.items();
     const after = items.slice(this._startIndex()! + 1);
     const before = items.slice(0, this._startIndex()!);
     items = after.concat(before);
@@ -92,7 +92,7 @@ export class ListTypeahead<T extends ListTypeaheadItem> {
 
     const focusableItems = [];
     for (const item of items) {
-      if (this.focusManager.isFocusable(item)) {
+      if (this.focusBehavior.isFocusable(item)) {
         focusableItems.push(item);
       }
     }
