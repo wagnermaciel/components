@@ -10,14 +10,14 @@ import {signal, WritableSignal} from '@angular/core';
 import {List, ListItem, ListInputs} from './list';
 import {fakeAsync, tick} from '@angular/core/testing';
 
-type TestItem<V> = ListItem<V> & {
+type TestItem<V> = ListItem & {
   disabled: WritableSignal<boolean>;
   searchTerm: WritableSignal<string>;
   value: WritableSignal<V>;
 };
 
-type TestInputs<V> = ListInputs<TestItem<V>, V>;
-type TestList<V> = List<TestItem<V>, V>;
+type TestInputs<V> = ListInputs<TestItem<V>>;
+type TestList<V> = List<TestItem<V>>;
 
 describe('List Behavior', () => {
   function getList<V>(inputs: Partial<TestInputs<V>> & Pick<TestInputs<V>, 'items'>): TestList<V> {

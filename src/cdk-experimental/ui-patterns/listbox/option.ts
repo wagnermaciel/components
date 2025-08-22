@@ -15,12 +15,12 @@ import {List, ListInputs, ListItem} from '../behaviors/list/list';
  * This exists to avoid circular dependency errors between the listbox and option.
  */
 interface ListboxPattern<V> {
-  inputs: ListInputs<OptionPattern<V>, V>;
-  listBehavior: List<OptionPattern<V>, V>;
+  inputs: ListInputs<OptionPattern<V>>;
+  listBehavior: List<OptionPattern<V>>;
 }
 
 /** Represents the required inputs for an option in a listbox. */
-export interface OptionInputs<V> extends Omit<ListItem<V>, 'index'> {
+export interface OptionInputs<V> extends Omit<ListItem, 'index'> {
   listbox: SignalLike<ListboxPattern<V> | undefined>;
 }
 

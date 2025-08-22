@@ -13,13 +13,13 @@ import {SignalLike} from '../behaviors/signal-like/signal-like';
 import {List, ListInputs} from '../behaviors/list/list';
 
 /** Represents the required inputs for a listbox. */
-export type ListboxInputs<V> = ListInputs<OptionPattern<V>, V> & {
+export type ListboxInputs<V> = ListInputs<OptionPattern<V>> & {
   readonly: SignalLike<boolean>;
 };
 
 /** Controls the state of a listbox. */
 export class ListboxPattern<V> {
-  listBehavior: List<OptionPattern<V>, V>;
+  listBehavior: List<OptionPattern<V>>;
 
   /** Whether the list is vertically or horizontally oriented. */
   orientation: SignalLike<'vertical' | 'horizontal'>;

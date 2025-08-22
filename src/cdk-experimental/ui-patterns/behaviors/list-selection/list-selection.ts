@@ -11,25 +11,25 @@ import {SignalLike, WritableSignalLike} from '../signal-like/signal-like';
 import {ListFocus, ListFocusInputs, ListFocusItem} from '../list-focus/list-focus';
 
 /** Represents an item in a collection, such as a listbox option, than can be selected. */
-export interface ListSelectionItem<V> extends ListFocusItem {
+export interface ListSelectionItem extends ListFocusItem {
   /** The value of the item. */
-  value: SignalLike<V>;
+  value: SignalLike<any>;
 }
 
 /** Represents the required inputs for a collection that contains selectable items. */
-export interface ListSelectionInputs<T extends ListSelectionItem<V>, V> extends ListFocusInputs<T> {
+export interface ListSelectionInputs<T extends ListSelectionItem> extends ListFocusInputs<T> {
   /** Whether multiple items in the list can be selected at once. */
   multi: SignalLike<boolean>;
 
   /** The current value of the list selection. */
-  value: WritableSignalLike<V[]>;
+  value: WritableSignalLike<any[]>;
 
   /** The selection strategy used by the list. */
   selectionMode: SignalLike<'follow' | 'explicit'>;
 }
 
 /** Controls selection for a list of items. */
-export class ListSelection<T extends ListSelectionItem<V>, V> {
+export class ListSelection<T extends ListSelectionItem> {
   /** The start index to use for range selection. */
   rangeStartIndex = signal<number>(0);
 
@@ -41,11 +41,11 @@ export class ListSelection<T extends ListSelectionItem<V>, V> {
     this.inputs.items().filter(item => this.inputs.value().includes(item.value())),
   );
 
-  constructor(readonly inputs: ListSelectionInputs<T, V> & {focusManager: ListFocus<T>}) {}
+  constructor(readonly inputs: ListSelectionInputs<T> & {focusManager: ListFocus<T>}) {}
 
   /** Selects the item at the current active index. */
-  select(item?: ListSelectionItem<V>, opts = {anchor: true}) {
-    item = item ?? (this.inputs.focusManager.inputs.activeItem() as ListSelectionItem<V>);
+  select(item?: ListSelectionItem, opts = {anchor: true}) {
+    item = item ?? (this.inputs.focusManager.inputs.activeItem() as ListSelectionItem);
 
     if (item.disabled() || this.inputs.value().includes(item.value())) {
       return;

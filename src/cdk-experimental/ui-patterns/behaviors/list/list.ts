@@ -34,24 +34,21 @@ interface SelectOptions {
 }
 
 /** Represents an item in the list. */
-export type ListItem<V> = ListTypeaheadItem &
-  ListNavigationItem &
-  ListSelectionItem<V> &
-  ListFocusItem;
+export type ListItem = ListTypeaheadItem & ListNavigationItem & ListSelectionItem & ListFocusItem;
 
 /** The necessary inputs for the list behavior. */
-export type ListInputs<T extends ListItem<V>, V> = ListFocusInputs<T> &
+export type ListInputs<T extends ListItem> = ListFocusInputs<T> &
   ListNavigationInputs<T> &
-  ListSelectionInputs<T, V> &
+  ListSelectionInputs<T> &
   ListTypeaheadInputs<T>;
 
 /** Controls the state of a list. */
-export class List<T extends ListItem<V>, V> {
+export class List<T extends ListItem> {
   /** Controls navigation for the list. */
   navigationBehavior: ListNavigation<T>;
 
   /** Controls selection for the list. */
-  selectionBehavior: ListSelection<T, V>;
+  selectionBehavior: ListSelection<T>;
 
   /** Controls typeahead for the list. */
   typeaheadBehavior: ListTypeahead<T>;
@@ -88,7 +85,7 @@ export class List<T extends ListItem<V>, V> {
   /** Whether the list should wrap. Used to disable wrapping while range selecting. */
   private _wrap = signal(true);
 
-  constructor(readonly inputs: ListInputs<T, V>) {
+  constructor(readonly inputs: ListInputs<T>) {
     this.focusBehavior = new ListFocus(inputs);
     this.selectionBehavior = new ListSelection({...inputs, focusManager: this.focusBehavior});
     this.typeaheadBehavior = new ListTypeahead({...inputs, focusManager: this.focusBehavior});

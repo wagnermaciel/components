@@ -11,14 +11,14 @@ import {ListSelectionItem, ListSelection, ListSelectionInputs} from './list-sele
 import {getListFocus} from '../list-focus/list-focus.spec';
 import {ListFocus} from '../list-focus/list-focus';
 
-type TestItem = ListSelectionItem<number> & {
+type TestItem = ListSelectionItem & {
   disabled: WritableSignal<boolean>;
 };
-type TestInputs = Partial<ListSelectionInputs<TestItem, number>> & {
+type TestInputs = Partial<ListSelectionInputs<TestItem>> & {
   numItems?: number;
 };
 
-function getSelection(inputs: TestInputs = {}): ListSelection<ListSelectionItem<number>, number> {
+function getSelection(inputs: TestInputs = {}): ListSelection<ListSelectionItem> {
   const items = getItems(inputs.numItems ?? 5);
   const focusManager = getListFocus({...inputs, items}) as ListFocus<TestItem>;
 
