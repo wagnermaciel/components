@@ -50,5 +50,6 @@ export class CdkComboboxPopupContent {}
   exportAs: 'cdkComboboxPopup',
 })
 export class CdkComboboxPopup {
+  /** The combobox that the popup belongs to. */
   readonly combobox = inject(CdkCombobox, {optional: true});
 }
