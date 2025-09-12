@@ -113,13 +113,15 @@ export class CdkListbox<V> {
     activeItem: signal(undefined),
     textDirection: this.textDirection,
     element: () => this._elementRef.nativeElement,
-    isComboboxPopup: () => !!this._popup?.combobox,
+    combobox: () => this._popup?.combobox?.pattern,
   });
 
   /** Whether the listbox has received focus yet. */
   private _hasFocused = signal(false);
 
   constructor() {
+    this._popup?.actions?.set(this.pattern.comboboxActions);
+
     afterRenderEffect(() => {
       if (typeof ngDevMode === 'undefined' || ngDevMode) {
         const violations = this.pattern.validate();
@@ -153,6 +155,7 @@ export class CdkListbox<V> {
     '[attr.tabindex]': 'pattern.tabindex()',
     '[attr.aria-selected]': 'pattern.selected()',
     '[attr.aria-disabled]': 'pattern.disabled()',
+    '[attr.inert]': 'pattern.inert()',
   },
 })
 export class CdkOption<V> {

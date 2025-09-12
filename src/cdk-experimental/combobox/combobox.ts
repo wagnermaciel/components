@@ -6,8 +6,18 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {contentChild, Directive, inject} from '@angular/core';
+import {
+  afterRenderEffect,
+  contentChild,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import {DeferredContent, DeferredContentAware} from '@angular/cdk-experimental/deferred-content';
+import {ComboboxPattern, ComboboxPopupControls} from '../ui-patterns';
 
 @Directive({
   selector: '[cdkCombobox]',
@@ -18,6 +28,14 @@ import {DeferredContent, DeferredContentAware} from '@angular/cdk-experimental/d
       inputs: ['preserveContent'],
     },
   ],
+  host: {
+    '[attr.data-expanded]': 'pattern.expanded()',
+    '(input)': 'pattern.onInput($event)',
+    '(keydown)': 'pattern.onKeydown($event)',
+    '(pointerup)': 'pattern.onPointerup($event)',
+    '(focusin)': 'isFocused.set(true)',
+    '(focusout)': 'isFocused.set(false)',
+  },
 })
 export class CdkCombobox {
   /** The DeferredContentAware host directive. */
@@ -26,17 +44,48 @@ export class CdkCombobox {
   /** The combobox popup. */
   readonly popup = contentChild(CdkComboboxPopup);
 
+  /** The filter mode for the combobox. */
+  filterMode = input<'manual' | 'auto-select' | 'highlight'>('manual');
+
+  /** Whether the combobox is focused. */
+  readonly isFocused = signal(false);
+
+  /** The combobox ui pattern. */
+  readonly pattern = new ComboboxPattern({
+    ...this,
+    element: signal(undefined),
+    popupControls: () => this.popup()?.actions(),
+  });
+
   constructor() {
-    this._deferredContentAware?.contentVisible.set(true);
+    afterRenderEffect(() => {
+      this._deferredContentAware?.contentVisible.set(this.isFocused());
+    });
   }
 }
 
 @Directive({
   selector: 'input[cdkComboboxInput]',
   exportAs: 'cdkComboboxInput',
-  host: {'role': 'combobox'},
+  host: {
+    'role': 'combobox',
+    '[attr.aria-expanded]': 'combobox.pattern.expanded()',
+    '(blur)': 'combobox.pattern.onBlur()',
+  },
 })
-export class CdkComboboxInput {}
+export class CdkComboboxInput {
+  /** The element that the combobox is attached to. */
+  private readonly _elementRef = inject(ElementRef);
+
+  /** The combobox that the input belongs to. */
+  readonly combobox = inject(CdkCombobox);
+
+  constructor() {
+    (this.combobox.pattern.inputs.element as WritableSignal<HTMLInputElement>).set(
+      this._elementRef.nativeElement,
+    );
+  }
+}
 
 @Directive({
   selector: 'ng-template[cdkComboboxPopupContent]',
@@ -52,4 +101,7 @@ export class CdkComboboxPopupContent {}
 export class CdkComboboxPopup {
   /** The combobox that the popup belongs to. */
   readonly combobox = inject(CdkCombobox, {optional: true});
+
+  /** The actions that the combobox can perform on the popup. */
+  readonly actions = signal<ComboboxPopupControls<any> | undefined>(undefined);
 }
