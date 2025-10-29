@@ -67,11 +67,11 @@ describe('Toolbar Pattern', () => {
       const element = document.createElement('div');
       element.id = id;
 
-      if ('controls' in widgetInputs) {
+      if ('items' in widgetInputs) {
         // It's a group
         element.classList.add('toolbar-widget-group');
         return new ToolbarWidgetGroupPattern<V>({
-          ...widgetInputs,
+          ...(widgetInputs as TestToolbarWidgetGroupInputs<V>),
           id: signal(id),
           element: signal(element),
           toolbar: signal(toolbar),
@@ -80,7 +80,7 @@ describe('Toolbar Pattern', () => {
         // It's a widget
         element.classList.add('toolbar-widget');
         return new ToolbarWidgetPattern<V>({
-          ...widgetInputs,
+          ...(widgetInputs as TestToolbarWidgetInputs<V>),
           id: signal(id),
           element: signal(element),
           toolbar: signal(toolbar),
@@ -111,7 +111,9 @@ describe('Toolbar Pattern', () => {
         {disabled: signal(false)},
         {
           disabled: signal(false),
-          controls: signal(undefined),
+          items: signal([]),
+          activeItem: signal(undefined),
+          getItem: (target: Element) => undefined,
         },
         {disabled: signal(false)},
       ];
@@ -224,7 +226,9 @@ describe('Toolbar Pattern', () => {
         {disabled: signal(false)},
         {
           disabled: signal(false),
-          controls: signal(undefined),
+          items: signal([]),
+          activeItem: signal(undefined),
+          getItem: (target: Element) => undefined,
         },
         {disabled: signal(false)},
       ];
@@ -269,7 +273,9 @@ describe('Toolbar Pattern', () => {
         {disabled: signal(false)},
         {
           disabled: signal(false),
-          controls: signal(undefined),
+          items: signal([]),
+          activeItem: signal(undefined),
+          getItem: (target: Element) => undefined,
         },
       ];
       const {toolbar: newToolbar, items: newItems} = createToolbar<string>(
@@ -292,16 +298,15 @@ describe('Toolbar Pattern', () => {
     });
 
     it('should call "setDefaultState" on a widget group if it is the first focusable item', () => {
-      const fakeControls = jasmine.createSpyObj<ToolbarWidgetGroupControls>('fakeControls', [
-        'setDefaultState',
-      ]);
-      (widgetInputs[2] as TestToolbarWidgetGroupInputs<string>).controls.set(fakeControls);
-
       widgetInputs[0].disabled.set(true);
       widgetInputs[1].disabled.set(true);
+      const group = items[2] as ToolbarWidgetGroupPattern<string>;
+      spyOn(group, 'setDefaultState');
+
       toolbar.setDefaultState();
+
       expect(toolbarInputs.activeItem()).toBe(items[2]);
-      expect(fakeControls.setDefaultState).toHaveBeenCalled();
+      expect(group.setDefaultState).toHaveBeenCalled();
     });
   });
 
@@ -309,21 +314,9 @@ describe('Toolbar Pattern', () => {
     let toolbar: ToolbarPattern<string>;
     let toolbarInputs: TestToolbarInputs<string>;
     let items: (ToolbarWidgetPattern<string> | ToolbarWidgetGroupPattern<string>)[];
-    let fakeControls: jasmine.SpyObj<ToolbarWidgetGroupControls>;
+    let group: ToolbarWidgetGroupPattern<string>;
 
     beforeEach(() => {
-      fakeControls = jasmine.createSpyObj<ToolbarWidgetGroupControls>('fakeControls', [
-        'next',
-        'prev',
-        'first',
-        'last',
-        'unfocus',
-        'trigger',
-        'goto',
-        'setDefaultState',
-        'isOnFirstItem',
-        'isOnLastItem',
-      ]);
       toolbarInputs = {
         activeItem: signal(undefined),
         orientation: signal('horizontal'),
@@ -336,7 +329,9 @@ describe('Toolbar Pattern', () => {
         {disabled: signal(false)},
         {
           disabled: signal(false),
-          controls: signal(fakeControls),
+          items: signal([]),
+          activeItem: signal(undefined),
+          getItem: (target: Element) => undefined,
         },
         {disabled: signal(false)},
       ];
@@ -346,121 +341,140 @@ describe('Toolbar Pattern', () => {
       );
       toolbar = newToolbar;
       items = newItems;
+      group = items[1] as ToolbarWidgetGroupPattern<string>;
 
       // Set the widget group as the active item for tests.
       toolbarInputs.activeItem.set(items[1]);
     });
 
     it('should call "next" on the group handler when navigating next (horizontal)', () => {
-      fakeControls.isOnLastItem.and.returnValue(false);
+      spyOn(group, 'isOnLastItem').and.returnValue(false);
+      spyOn(group, 'next');
       toolbar.onKeydown(right());
-      expect(fakeControls.next).toHaveBeenCalledWith(false);
+      expect(group.next).toHaveBeenCalledWith(false);
     });
 
     it('should call "next" on the group handler when navigating next (vertical)', () => {
-      fakeControls.isOnLastItem.and.returnValue(false);
+      spyOn(group, 'isOnLastItem').and.returnValue(false);
+      spyOn(group, 'next');
       toolbarInputs.orientation.set('vertical');
       toolbar.onKeydown(down());
-      expect(fakeControls.next).toHaveBeenCalledWith(false);
+      expect(group.next).toHaveBeenCalledWith(false);
     });
 
     it('should navigate to the next widget if the group allows it', () => {
-      fakeControls.isOnLastItem.and.returnValue(true);
+      spyOn(group, 'isOnLastItem').and.returnValue(true);
+      spyOn(group, 'unfocus');
       toolbar.onKeydown(right());
       expect(toolbarInputs.activeItem()).toBe(items[2]);
-      expect(fakeControls.unfocus).toHaveBeenCalled();
+      expect(group.unfocus).toHaveBeenCalled();
     });
 
     it('should not navigate to the next widget if the group prevents it', () => {
-      fakeControls.isOnLastItem.and.returnValue(false);
+      spyOn(group, 'isOnLastItem').and.returnValue(false);
+      spyOn(group, 'next');
       toolbar.onKeydown(right());
       expect(toolbarInputs.activeItem()).toBe(items[1]);
-      expect(fakeControls.next).toHaveBeenCalledWith(false);
+      expect(group.next).toHaveBeenCalledWith(false);
     });
 
     it('should call "prev" on the group handler when navigating previous (horizontal)', () => {
-      fakeControls.isOnFirstItem.and.returnValue(false);
+      spyOn(group, 'isOnFirstItem').and.returnValue(false);
+      spyOn(group, 'prev');
       toolbar.onKeydown(left());
-      expect(fakeControls.prev).toHaveBeenCalledWith(false);
+      expect(group.prev).toHaveBeenCalledWith(false);
     });
 
     it('should call "prev" on the group handler when navigating previous (vertical)', () => {
-      fakeControls.isOnFirstItem.and.returnValue(false);
+      spyOn(group, 'isOnFirstItem').and.returnValue(false);
+      spyOn(group, 'prev');
       toolbarInputs.orientation.set('vertical');
       toolbar.onKeydown(up());
-      expect(fakeControls.prev).toHaveBeenCalledWith(false);
+      expect(group.prev).toHaveBeenCalledWith(false);
     });
 
     it('should navigate to the previous widget if the group allows it', () => {
-      fakeControls.isOnFirstItem.and.returnValue(true);
+      spyOn(group, 'isOnFirstItem').and.returnValue(true);
+      spyOn(group, 'unfocus');
       toolbar.onKeydown(left());
       expect(toolbarInputs.activeItem()).toBe(items[0]);
-      expect(fakeControls.unfocus).toHaveBeenCalled();
+      expect(group.unfocus).toHaveBeenCalled();
     });
 
     it('should not navigate to the previous widget if the group prevents it', () => {
-      fakeControls.isOnFirstItem.and.returnValue(false);
+      spyOn(group, 'isOnFirstItem').and.returnValue(false);
+      spyOn(group, 'prev');
       toolbar.onKeydown(left());
       expect(toolbarInputs.activeItem()).toBe(items[1]);
-      expect(fakeControls.prev).toHaveBeenCalledWith(false);
+      expect(group.prev).toHaveBeenCalledWith(false);
     });
 
     it('should call "unfocus" on the group handler on Home', () => {
+      spyOn(group, 'unfocus');
       toolbar.onKeydown(home());
-      expect(fakeControls.unfocus).toHaveBeenCalled();
+      expect(group.unfocus).toHaveBeenCalled();
       expect(toolbarInputs.activeItem()).toBe(items[0]); // Also moves focus
     });
 
     it('should call "unfocus" on the group handler on End', () => {
+      spyOn(group, 'unfocus');
       toolbar.onKeydown(end());
-      expect(fakeControls.unfocus).toHaveBeenCalled();
+      expect(group.unfocus).toHaveBeenCalled();
       expect(toolbarInputs.activeItem()).toBe(items[2]); // Also moves focus
     });
 
     it('should call "trigger" on the group handler on Enter', () => {
+      spyOn(group, 'trigger');
       toolbar.onKeydown(enter());
-      expect(fakeControls.trigger).toHaveBeenCalled();
+      expect(group.trigger).toHaveBeenCalled();
     });
 
     it('should call "trigger" on the group handler on Space', () => {
+      spyOn(group, 'trigger');
       toolbar.onKeydown(space());
-      expect(fakeControls.trigger).toHaveBeenCalled();
+      expect(group.trigger).toHaveBeenCalled();
     });
 
     it('should call "next" with wrap on the group handler (horizontal)', () => {
+      spyOn(group, 'next');
       toolbar.onKeydown(down());
-      expect(fakeControls.next).toHaveBeenCalledWith(true);
+      expect(group.next).toHaveBeenCalledWith(true);
     });
 
     it('should call "next" with wrap on the group handler (vertical)', () => {
+      spyOn(group, 'next');
       toolbarInputs.orientation.set('vertical');
       toolbar.onKeydown(right());
-      expect(fakeControls.next).toHaveBeenCalledWith(true);
+      expect(group.next).toHaveBeenCalledWith(true);
     });
 
     it('should call "prev" with wrap on the group handler (horizontal)', () => {
+      spyOn(group, 'prev');
       toolbar.onKeydown(up());
-      expect(fakeControls.prev).toHaveBeenCalledWith(true);
+      expect(group.prev).toHaveBeenCalledWith(true);
     });
 
     it('should call "prev" with wrap on the group handler (vertical)', () => {
+      spyOn(group, 'prev');
       toolbarInputs.orientation.set('vertical');
       toolbar.onKeydown(left());
-      expect(fakeControls.prev).toHaveBeenCalledWith(true);
+      expect(group.prev).toHaveBeenCalledWith(true);
     });
 
     it('should call "first" when navigating into a group from the previous item', () => {
+      spyOn(group, 'first');
       toolbarInputs.activeItem.set(items[0]);
       toolbar.onKeydown(right());
       expect(toolbarInputs.activeItem()).toBe(items[1]);
-      expect(fakeControls.first).toHaveBeenCalled();
+      expect(group.first).toHaveBeenCalled();
     });
 
     it('should call "last" when navigating into a group from the next item', () => {
+      spyOn(group, 'last');
       toolbarInputs.activeItem.set(items[2]);
       toolbar.onKeydown(left());
       expect(toolbarInputs.activeItem()).toBe(items[1]);
-      expect(fakeControls.last).toHaveBeenCalled();
+      expect(group.last).toHaveBeenCalled();
     });
   });
 });

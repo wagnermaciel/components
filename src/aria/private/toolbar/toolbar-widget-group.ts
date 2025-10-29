@@ -46,16 +46,45 @@ export interface ToolbarWidgetGroupControls {
 
 /** Represents the required inputs for a toolbar widget group. */
 export interface ToolbarWidgetGroupInputs<V>
-  extends Omit<ListItem<V>, 'searchTerm' | 'value' | 'index' | 'selectable'> {
+  extends Omit<
+    ListInputs<ToolbarWidgetPattern<V>, V>,
+    'multi' | 'selectionFollowsFocus' | 'values' | 'trackBy' | 'orientation' | 'wrap'
+  > {
   /** A reference to the parent toolbar. */
   toolbar: SignalLike<ToolbarPattern<V> | undefined>;
 
-  /** The controls for the sub patterns associated with the toolbar. */
-  controls: SignalLike<ToolbarWidgetGroupControls | undefined>;
+  /** A unique identifier for the widget. */
+  id: SignalLike<string>;
+
+  /** The html element that should receive focus. */
+  element: SignalLike<HTMLElement>;
+
+  /** Whether the list can have more than one selected item. */
+  multi?: SignalLike<boolean>;
+
+  /** Whether selection moves automatically with focus. */
+  selectionFollowsFocus?: SignalLike<boolean>;
+
+  /** The values of the selected items. */
+  values?: SignalLike<readonly V[]>;
+
+  /** A function to track items by. */
+  trackBy?: (value: V) => unknown;
+
+  /** The orientation of the list. */
+  orientation?: SignalLike<'vertical' | 'horizontal'>;
+
+  /** Whether the list wraps around when navigating. */
+  wrap?: SignalLike<boolean>;
 }
 
+import {List, ListItem, ListInputs} from '../behaviors/list/list';
+import type {ToolbarWidgetPattern} from './toolbar-widget';
+
 /** A group of widgets within a toolbar that provides nested navigation. */
-export class ToolbarWidgetGroupPattern<V> implements ListItem<V> {
+export class ToolbarWidgetGroupPattern<V>
+  implements ListItem<V>, ToolbarWidgetGroupControls, List<ToolbarWidgetPattern<V>, V>
+{
   /** A unique identifier for the widget. */
   readonly id: SignalLike<string>;
 
@@ -80,29 +109,65 @@ export class ToolbarWidgetGroupPattern<V> implements ListItem<V> {
   /** The position of the widget within the toolbar. */
   readonly index = computed(() => this.toolbar()?.inputs.items().indexOf(this) ?? -1);
 
-  /** The actions that can be performed on the widget group. */
-  readonly controls: SignalLike<ToolbarWidgetGroupControls> = computed(
-    () => this.inputs.controls() ?? this._defaultControls,
-  );
-
-  /** Default toolbar widget group controls when no controls provided. */
-  private readonly _defaultControls: ToolbarWidgetGroupControls = {
-    isOnFirstItem: () => true,
-    isOnLastItem: () => true,
-    next: () => {},
-    prev: () => {},
-    first: () => {},
-    last: () => {},
-    unfocus: () => {},
-    trigger: () => {},
-    goto: () => {},
-    setDefaultState: () => {},
-  };
+  /** The list behavior that manages the items in the group. */
+  readonly list: List<ToolbarWidgetPattern<V>, V>;
 
   constructor(readonly inputs: ToolbarWidgetGroupInputs<V>) {
     this.id = inputs.id;
     this.element = inputs.element;
     this.disabled = inputs.disabled;
     this.toolbar = inputs.toolbar;
+    this.list = new List({
+      ...inputs,
+      multi: inputs.multi ?? (() => false),
+      selectionFollowsFocus: inputs.selectionFollowsFocus ?? (() => false),
+      values: inputs.values ?? (() => []),
+      trackBy: inputs.trackBy ?? (() => {}),
+      orientation: inputs.orientation ?? (() => 'horizontal'),
+      wrap: inputs.wrap ?? (() => true),
+    });
+  }
+
+  /** Whether the group is currently on the first item. */
+  isOnFirstItem = () => this.list.navigationBehavior.isAtFirstItem();
+
+  /** Whether the group is currently on the last item. */
+  isOnLastItem = () => this.list.navigationBehavior.isAtLastItem();
+
+  /** Navigates to the next widget in the group. */
+  next = (wrap: boolean) => this.list.next({wrap, focusElement: true});
+
+  /** Navigates to the previous widget in the group. */
+  prev = (wrap: boolean) => this.list.prev({wrap, focusElement: true});
+
+  /** Navigates to the first widget in the group. */
+  first = () => this.list.first({focusElement: true});
+
+  /** Navigates to the last widget in the group. */
+  last = () => this.list.last({focusElement: true});
+
+  /** Removes focus from the widget group. */
+  unfocus = () => this.list.unfocus();
+
+  /** Triggers the action of the currently active widget in the group. */
+  trigger = () => {
+    this.list.focusBehavior.activeItem()?.toolbar().trigger();
+  };
+
+  /** Navigates to the widget targeted by a pointer event. */
+  goto = (event: PointerEvent) => {
+    const target = event.target;
+    if (target instanceof HTMLElement) {
+      const item = this.list.focusBehavior.getItem(target);
+      if (item) {
+        this.list.goto(item, {focusElement: true});
+      }
+    }
+  };
+
+  /** Sets the widget group to its default initial state. */
+  setDefaultState() {
+    this.list.selectionBehavior.deselectAll();
+    this.list.focusBehavior.unfocus();
   }
 }
