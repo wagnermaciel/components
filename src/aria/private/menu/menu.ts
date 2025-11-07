@@ -26,6 +26,9 @@ export interface MenuBarInputs<V> extends Omit<ListInputs<MenuItemPattern<V>, V>
 /** The inputs for the MenuPattern class. */
 export interface MenuInputs<V>
   extends Omit<ListInputs<MenuItemPattern<V>, V>, 'value' | 'disabled'> {
+  /** The hover delay for the menu. */
+  hoverDelay: SignalLike<number>;
+
   /** The unique ID of the menu. */
   id: SignalLike<string>;
 
@@ -173,6 +176,12 @@ export class MenuPattern<V> {
     this.keydownManager().handle(event);
   }
 
+  /** The timeout used to open a submenu. */
+  private _openSubmenuTimeout?: ReturnType<typeof setTimeout>;
+
+  /** The timeout used to close a submenu. */
+  private _closeSubmenuTimeout?: ReturnType<typeof setTimeout>;
+
   /** Handles mouseover events for the menu. */
   onMouseOver(event: MouseEvent) {
     if (!this.isVisible()) {
@@ -185,30 +194,57 @@ export class MenuPattern<V> {
       return;
     }
 
-    const activeItem = this?.inputs.activeItem();
+    const activeItem = this.inputs.activeItem();
 
-    if (activeItem && activeItem !== item) {
-      activeItem.close();
+    // If we moved to a new item
+    if (activeItem !== item) {
+      this.listBehavior.goto(item, {focusElement: this.shouldFocus()});
+      clearTimeout(this._openSubmenuTimeout);
+
+      if (activeItem?.expanded()) {
+        clearTimeout(this._closeSubmenuTimeout);
+        this._closeSubmenuTimeout = setTimeout(() => {
+          activeItem.close();
+        }, this.inputs.hoverDelay());
+      }
+    } else {
+      // moved within the same item, or back to it
+      clearTimeout(this._closeSubmenuTimeout);
     }
 
-    if (item.expanded() && item.submenu()?.inputs.activeItem()) {
-      item.submenu()?.inputs.activeItem()?.close();
-      item.submenu()?.listBehavior.unfocus();
+    if (item.submenu() && !item.expanded()) {
+      this._openSubmenuTimeout = setTimeout(() => {
+        item.open();
+      }, this.inputs.hoverDelay());
     }
-
-    item.open();
-    this.listBehavior.goto(item, {focusElement: this.shouldFocus()});
   }
 
   /** Handles mouseout events for the menu. */
   onMouseOut(event: MouseEvent) {
+    clearTimeout(this._openSubmenuTimeout);
+
+    const activeItem = this.inputs.activeItem();
+    const menuEl = this.inputs.element();
+    const relatedTarget = event.relatedTarget as Node | null;
+
+    if (
+      menuEl?.contains(event.target as Node) &&
+      !menuEl?.contains(relatedTarget) &&
+      activeItem?.expanded() &&
+      !activeItem.submenu()?.inputs.element()?.contains(relatedTarget)
+    ) {
+      clearTimeout(this._closeSubmenuTimeout);
+      this._closeSubmenuTimeout = setTimeout(() => {
+        activeItem.close();
+      }, this.inputs.hoverDelay());
+    }
+
     if (this.isFocused()) {
       return;
     }
 
     const root = this.root();
     const parent = this.inputs.parent();
-    const relatedTarget = event.relatedTarget as Node | null;
 
     if (!root || !parent || parent instanceof MenuTriggerPattern) {
       return;

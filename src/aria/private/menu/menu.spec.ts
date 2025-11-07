@@ -87,7 +87,7 @@ function getMenuBarPattern(values: string[], opts?: {textDirection: 'ltr' | 'rtl
 function getMenuPattern(
   parent: undefined | MenuItemPattern<string> | MenuTriggerPattern<string>,
   values: string[],
-  opts?: {textDirection: 'ltr' | 'rtl'},
+  opts?: {textDirection: 'ltr' | 'rtl'; hoverDelay?: number},
 ) {
   const items = signal<TestMenuItem[]>([]);
 
@@ -97,6 +97,7 @@ function getMenuPattern(
     parent: signal(parent) as any,
     activeItem: signal(undefined),
     typeaheadDelay: signal(0.5),
+    hoverDelay: signal(opts?.hoverDelay ?? 0),
     wrap: signal(true),
     softDisabled: signal(true),
     multi: signal(false),
@@ -348,9 +349,98 @@ describe('Standalone Menu Pattern', () => {
     });
 
     it('should open submenu on mouseover', () => {
+      jasmine.clock().install();
+      menu.inputs.hoverDelay.set(300);
+
       const menuItem = menu.inputs.items()[0];
       menu.onMouseOver({target: menuItem.element()} as unknown as MouseEvent);
+      expect(submenu.isVisible()).toBe(false);
+
+      jasmine.clock().tick(300);
       expect(submenu.isVisible()).toBe(true);
+      jasmine.clock().uninstall();
+    });
+
+    it('should not open submenu on mouseover if mouse moves away before delay', () => {
+      jasmine.clock().install();
+      menu.inputs.hoverDelay.set(300);
+
+      const menuItem = menu.inputs.items()[0];
+      const otherMenuItem = menu.inputs.items()[1];
+
+      // Hover over the first item
+      menu.onMouseOver({target: menuItem.element()} as unknown as MouseEvent);
+      expect(submenu.isVisible()).toBe(false);
+
+      // Wait for less than the delay
+      jasmine.clock().tick(150);
+      expect(submenu.isVisible()).toBe(false);
+
+      // Move the mouse to another item
+      menu.onMouseOver({target: otherMenuItem.element()} as unknown as MouseEvent);
+
+      // Wait for the original delay to pass
+      jasmine.clock().tick(150);
+      expect(submenu.isVisible()).toBe(false);
+
+      jasmine.clock().uninstall();
+    });
+
+    it('should close an open submenu on mouseout after a delay', () => {
+      jasmine.clock().install();
+      menu.inputs.hoverDelay.set(300);
+
+      // Open the submenu
+      const menuItem = menu.inputs.items()[0];
+      menu.onMouseOver({target: menuItem.element()} as unknown as MouseEvent);
+      jasmine.clock().tick(300);
+      expect(submenu.isVisible()).toBe(true);
+
+      // Move the mouse out of the menu
+      menu.onMouseOut({
+        target: menu.inputs.element(),
+        relatedTarget: document.body,
+      } as unknown as MouseEvent);
+
+      // The submenu should not close immediately
+      expect(submenu.isVisible()).toBe(true);
+
+      // It should close after the delay
+      jasmine.clock().tick(300);
+      expect(submenu.isVisible()).toBe(false);
+
+      jasmine.clock().uninstall();
+    });
+
+    it('should not close an open submenu if mouse returns before delay', () => {
+      jasmine.clock().install();
+      menu.inputs.hoverDelay.set(300);
+
+      // Open the submenu
+      const menuItem = menu.inputs.items()[0];
+      menu.onMouseOver({target: menuItem.element()} as unknown as MouseEvent);
+      jasmine.clock().tick(300);
+      expect(submenu.isVisible()).toBe(true);
+
+      // Move the mouse out of the menu
+      menu.onMouseOut({
+        target: menu.inputs.element(),
+        relatedTarget: document.body,
+      } as unknown as MouseEvent);
+      expect(submenu.isVisible()).toBe(true);
+
+      // Wait for less than the delay
+      jasmine.clock().tick(150);
+      expect(submenu.isVisible()).toBe(true);
+
+      // Move the mouse back to the menu item
+      menu.onMouseOver({target: menuItem.element()} as unknown as MouseEvent);
+
+      // Wait for the original delay to pass
+      jasmine.clock().tick(150);
+      expect(submenu.isVisible()).toBe(true);
+
+      jasmine.clock().uninstall();
     });
 
     it('should close on selecting an item on click', () => {
