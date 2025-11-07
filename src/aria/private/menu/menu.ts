@@ -182,6 +182,9 @@ export class MenuPattern<V> {
   /** The timeout used to close a submenu. */
   private _closeSubmenuTimeout?: ReturnType<typeof setTimeout>;
 
+  /** The item that has a pending close action. */
+  private _itemWithPendingClose?: MenuItemPattern<V>;
+
   /** Handles mouseover events for the menu. */
   onMouseOver(event: MouseEvent) {
     if (!this.isVisible()) {
@@ -196,20 +199,23 @@ export class MenuPattern<V> {
 
     const activeItem = this.inputs.activeItem();
 
+    if (item !== this._itemWithPendingClose) {
+      clearTimeout(this._closeSubmenuTimeout);
+    }
+
     // If we moved to a new item
     if (activeItem !== item) {
       this.listBehavior.goto(item, {focusElement: this.shouldFocus()});
       clearTimeout(this._openSubmenuTimeout);
 
       if (activeItem?.expanded()) {
+        this._itemWithPendingClose = activeItem;
         clearTimeout(this._closeSubmenuTimeout);
         this._closeSubmenuTimeout = setTimeout(() => {
           activeItem.close();
+          this._itemWithPendingClose = undefined;
         }, this.inputs.hoverDelay());
       }
-    } else {
-      // moved within the same item, or back to it
-      clearTimeout(this._closeSubmenuTimeout);
     }
 
     if (item.submenu() && !item.expanded()) {
@@ -233,9 +239,11 @@ export class MenuPattern<V> {
       activeItem?.expanded() &&
       !activeItem.submenu()?.inputs.element()?.contains(relatedTarget)
     ) {
+      this._itemWithPendingClose = activeItem;
       clearTimeout(this._closeSubmenuTimeout);
       this._closeSubmenuTimeout = setTimeout(() => {
         activeItem.close();
+        this._itemWithPendingClose = undefined;
       }, this.inputs.hoverDelay());
     }
 

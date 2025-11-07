@@ -386,6 +386,35 @@ describe('Standalone Menu Pattern', () => {
       jasmine.clock().uninstall();
     });
 
+    it('should not close an open submenu if mouse moves to another item and then back before delay', () => {
+      jasmine.clock().install();
+      menu.inputs.hoverDelay.set(300);
+
+      // Open the submenu
+      const menuItem = menu.inputs.items()[0];
+      const otherMenuItem = menu.inputs.items()[1];
+      menu.onMouseOver({target: menuItem.element()} as unknown as MouseEvent);
+      jasmine.clock().tick(300);
+      expect(submenu.isVisible()).toBe(true);
+
+      // Move the mouse to another item
+      menu.onMouseOver({target: otherMenuItem.element()} as unknown as MouseEvent);
+      expect(submenu.isVisible()).toBe(true);
+
+      // Wait for less than the delay
+      jasmine.clock().tick(150);
+      expect(submenu.isVisible()).toBe(true);
+
+      // Move the mouse back to the original item
+      menu.onMouseOver({target: menuItem.element()} as unknown as MouseEvent);
+
+      // Wait for the original delay to pass
+      jasmine.clock().tick(150);
+      expect(submenu.isVisible()).toBe(true);
+
+      jasmine.clock().uninstall();
+    });
+
     it('should close an open submenu on mouseout after a delay', () => {
       jasmine.clock().install();
       menu.inputs.hoverDelay.set(300);
