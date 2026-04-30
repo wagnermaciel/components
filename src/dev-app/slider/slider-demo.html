@@ -186,4 +186,17 @@
       <button matButton="elevated" [color]="colorModel" (click)="openDialog()">Open dialog</button>
     </div>
   </mat-tab>
+
+  <mat-tab label="Signal forms issue 33008">
+    <div style="margin: 20px;">
+      <p>Reproduction of issue #33008 where slider range thumb glitches when signal form emits value change</p>
+      <mat-slider [discrete]="discrete" [showTickMarks]="showTickMarks" [color]="colorModel">
+        <input matSliderStartThumb [value]="issueFormStartControl.value" (input)="issueFormStartControl.setValue($any($event.target).value)" />
+        <input matSliderEndThumb [value]="issueFormEndControl.value" (input)="issueFormEndControl.setValue($any($event.target).value)" />
+      </mat-slider>
+      <div>Start: {{ issueFormStartControl.value }}</div>
+      <div>End: {{ issueFormEndControl.value }}</div>
+    </div>
+  </mat-tab>
+
 </mat-tab-group>
