@@ -1413,6 +1413,36 @@ describe('MatSlider', () => {
       expect(fixture.componentInstance.startInputControl.value).toBe(20);
     });
 
+
+    it('should not update inactive styles when value changes while dragging', async () => {
+      // Set initial values
+      fixture.componentInstance.startInputControl.setValue(10);
+      fixture.componentInstance.endInputControl.setValue(90);
+      fixture.detectChanges();
+
+      const startInputNode = slider._getInput(_MatThumb.START) as MatSliderRangeThumb;
+      const hostElement = startInputNode._hostElement;
+
+      // Simulate pointer down to make it active
+      dispatchPointerEvent(hostElement, 'pointerdown', 10, 0);
+      fixture.detectChanges();
+
+      expect(startInputNode._isActive).toBe(true);
+
+      // Save the style before value update
+      const activeStyle = hostElement.style.padding;
+
+      // Update value through form control
+      fixture.componentInstance.startInputControl.setValue(20);
+      fixture.detectChanges();
+
+      // Ensure that _updateWidthInactive was not called (which would set padding to 0px)
+      expect(hostElement.style.padding).toBe(activeStyle);
+
+      dispatchPointerEvent(hostElement, 'pointerup', 20, 0);
+      fixture.detectChanges();
+    });
+
     it('should update the end input control on slide', async () => {
       expect(fixture.componentInstance.endInputControl.value).toBe(100);
       await slideToValue(slider, endInput, 80);

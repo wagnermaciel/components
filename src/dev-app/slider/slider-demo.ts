@@ -56,6 +56,9 @@ export class SliderDemo {
   stepModel = 0;
   disabledModel = false;
 
+  issueFormStartControl = new FormControl('30', {nonNullable: true});
+  issueFormEndControl = new FormControl('70', {nonNullable: true});
+
   control = new FormControl('0');
 
   updateValue(input: EventTarget | null): void {

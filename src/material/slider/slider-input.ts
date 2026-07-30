@@ -814,8 +814,10 @@ export class MatSliderRangeThumb extends MatSliderThumb implements _MatSliderRan
   override writeValue(value: any): void {
     if (this._isControlInitialized || value !== null) {
       this.value = value;
-      this._updateWidthInactive();
-      this._updateSibling();
+      if (!this._isActive) {
+        this._updateWidthInactive();
+        this._updateSibling();
+      }
     }
   }
 
